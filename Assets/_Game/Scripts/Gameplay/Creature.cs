@@ -93,6 +93,7 @@ namespace TCC.Gameplay
             float speed = _cfg.moveSpeed * stageMul;
             Vector2 next = (Vector2)transform.position + _wanderDir * speed * dt;
             next = _sim.ClampToActivity(next);
+            next = KeepOutOfLabor(next);
             transform.position = next;
 
             if (Mathf.Abs(_wanderDir.x) > 0.01f)
@@ -139,16 +140,34 @@ namespace TCC.Gameplay
 
             var zone = _sim != null ? _sim.Labor : null;
             Vector2 pos = transform.position;
-            if (zone != null && zone.Contains(pos) && zone.TryPark(this))
+
+            // Only prime adults may work the labor circle. Infants (pink) and elders
+            // are never admitted — dropping them inside bounces them back out.
+            bool canWork = _stage == CreatureStage.Adult;
+            if (canWork && zone != null && zone.Contains(pos) && zone.TryPark(this))
             {
                 SetWorking(true); // dropped into the circle — start working
             }
             else
             {
                 SetWorking(false);
-                transform.position = _sim.ClampToActivity(pos); // snap back into bounds
+                pos = _sim.ClampToActivity(pos); // snap back into bounds
+                transform.position = KeepOutOfLabor(pos);
                 PickWander();
             }
+        }
+
+        /// <summary>Push a non-working creature to the labor circle's edge so it can
+        /// never rest inside the reserved work zone.</summary>
+        private Vector2 KeepOutOfLabor(Vector2 pos)
+        {
+            var zone = _sim != null ? _sim.Labor : null;
+            if (zone == null) return pos;
+            Vector2 d = pos - zone.Center;
+            float r = zone.Radius + 0.2f;
+            if (d.sqrMagnitude >= r * r) return pos;
+            if (d.sqrMagnitude < 0.0001f) d = Vector2.down;
+            return _sim.ClampToActivity(zone.Center + d.normalized * r);
         }
 
         private void SetWorking(bool on)
