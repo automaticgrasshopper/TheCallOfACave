@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0000000000000000000000000000003, type: 3}
+  m_Name: AudioLibrary
+  m_EditorClassIdentifier:
+  music: {fileID: 0}
+  musicVolume: 0.6
+  sfx:
+  - id: feed
+    clip: {fileID: 0}
+    volume: 0.8
+  - id: egg_lay
+    clip: {fileID: 0}
+    volume: 0.8
+  - id: egg_collect
+    clip: {fileID: 0}
+    volume: 0.9
+  - id: birth
+    clip: {fileID: 0}
+    volume: 0.7
+  - id: death
+    clip: {fileID: 0}
+    volume: 0.7
+  - id: click
+    clip: {fileID: 0}
+    volume: 0.8

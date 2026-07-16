@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0000000000000000000000000000004, type: 3}
+  m_Name: LocalizationTable
+  m_EditorClassIdentifier:
+  entries:
+  - key: game.title
+    zh: '洞穴之声'
+    en: 'The Call of A Cave'
+  - key: hud.money
+    zh: '金币：{0}'
+    en: 'Coins: {0}'
+  - key: hud.population
+    zh: '幼体 {0} · 成体 {1}'
+    en: 'Young {0} · Adult {1}'
+  - key: btn.buy_food
+    zh: '投喂'
+    en: 'Feed'
+  - key: hud.buy
+    zh: '购买幼体 120'
+    en: 'Buy Bug 120'
+  - key: btn.language
+    zh: 'EN'
+    en: '中文'
+  - key: btn.pause
+    zh: '暂停'
+    en: 'Pause'
+  - key: btn.resume
+    zh: '继续'
+    en: 'Resume'
+  - key: hint.feed
+    zh: '按住左键拖拽投喂'
+    en: 'Hold & drag to feed'
+  - key: state.gameover
+    zh: '全灭了…'
+    en: 'All gone...'
+  - key: menu.start
+    zh: '开始游戏'
+    en: 'Start Game'
+  - key: menu.restart
+    zh: '重新开始'
+    en: 'Restart'
+  - key: menu.continue
+    zh: '继续游戏'
+    en: 'Continue'
+  - key: menu.settings
+    zh: '游戏设置'
+    en: 'Settings'
+  - key: menu.quit
+    zh: '退出游戏'
+    en: 'Quit'
+  - key: settings.title
+    zh: '设置'
+    en: 'Settings'
+  - key: settings.fullscreen
+    zh: '全屏'
+    en: 'Fullscreen'
+  - key: settings.resolution
+    zh: '分辨率'
+    en: 'Resolution'
+  - key: settings.music
+    zh: '音乐'
+    en: 'Music'
+  - key: settings.sfx
+    zh: '音效'
+    en: 'Sound'
+  - key: settings.language
+    zh: '语言'
+    en: 'Language'
+  - key: settings.back
+    zh: '返回'
+    en: 'Back'
+  - key: alert.confirm
+    zh: '确定'
+    en: 'OK'
+  - key: alert.cancel
+    zh: '取消'
+    en: 'Cancel'
+  - key: alert.quit_title
+    zh: '退出游戏'
+    en: 'Quit Game'
+  - key: alert.quit_msg
+    zh: '确定要退出游戏吗？'
+    en: 'Are you sure you want to quit?'
