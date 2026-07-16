@@ -12,9 +12,9 @@ namespace TCC.Data
     public class SimulationConfig : ScriptableObject
     {
         [Header("Movement")]
-        public float moveSpeed = 1.5f;
+        public float moveSpeed = 0.9f;
         [Tooltip("How often a wandering bug picks a new drift direction.")]
-        public float wanderChangeInterval = 1.8f;
+        public float wanderChangeInterval = 2.4f;
 
         [Header("Lifespan (seconds) & stage split")]
         [Tooltip("Total life is rolled uniformly in this range on birth.")]

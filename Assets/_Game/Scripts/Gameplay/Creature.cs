@@ -86,7 +86,11 @@ namespace TCC.Gameplay
             _wanderTimer -= dt;
             if (_wanderTimer <= 0f) PickWander();
 
-            float speed = _cfg.moveSpeed * (_stage == CreatureStage.Elder ? 0.7f : 1f);
+            // Everything crawls; infants are the slowest, elders a touch slower than prime.
+            float stageMul = _stage == CreatureStage.Infant ? 0.5f
+                           : _stage == CreatureStage.Adult ? 0.8f
+                           : 0.6f;
+            float speed = _cfg.moveSpeed * stageMul;
             Vector2 next = (Vector2)transform.position + _wanderDir * speed * dt;
             next = _sim.ClampToActivity(next);
             transform.position = next;

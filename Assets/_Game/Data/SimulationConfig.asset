@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0000000000000000000000000000001, type: 3}
   m_Name: SimulationConfig
   m_EditorClassIdentifier:
-  moveSpeed: 1.5
-  wanderChangeInterval: 1.8
+  moveSpeed: 0.9
+  wanderChangeInterval: 2.4
   lifespanMin: 160
   lifespanMax: 200
   juvenileFraction: 0.2

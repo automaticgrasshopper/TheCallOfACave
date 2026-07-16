@@ -224,56 +224,50 @@ namespace TCC.EditorTools
 
             hudView = canvasGo.AddComponent<HudView>();
 
-            // ---- Right-hand opaque UI strip (money / population / actions) ----
-            var panelGo = new GameObject("RightPanel", typeof(RectTransform), typeof(Image));
+            // ---- Compact HUD card, tucked into the bottom-right corner ----
+            // (the rest of the right side is left free for the future spawn region)
+            var panelGo = new GameObject("HudCard", typeof(RectTransform), typeof(Image));
             panelGo.transform.SetParent(canvasGo.transform, false);
             var prt = (RectTransform)panelGo.transform;
-            prt.anchorMin = new Vector2(1, 0); prt.anchorMax = new Vector2(1, 1);
-            prt.pivot = new Vector2(1, 0.5f);
-            prt.sizeDelta = new Vector2(640, 0);
-            prt.anchoredPosition = Vector2.zero;
-            panelGo.GetComponent<Image>().color = new Color(0.10f, 0.12f, 0.15f, 1f);
+            prt.anchorMin = new Vector2(1, 0); prt.anchorMax = new Vector2(1, 0);
+            prt.pivot = new Vector2(1, 0);
+            prt.sizeDelta = new Vector2(480, 330);
+            prt.anchoredPosition = new Vector2(-24, 24);
+            panelGo.GetComponent<Image>().color = new Color(0.10f, 0.12f, 0.15f, 0.92f);
             var panel = panelGo.transform;
 
-            // Title
-            var title = Text(panel, "Title", 56,
-                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0, -50), new Vector2(600, 80), TextAlignmentOptions.Center);
-            Localize(title, LocalizationTable.Keys.GameTitle);
-            title.color = new Color(0.95f, 0.92f, 0.8f);
-
             // Money
-            var money = Text(panel, "Money", 52,
+            var money = Text(panel, "Money", 42,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0, -170), new Vector2(580, 70), TextAlignmentOptions.Center);
+                new Vector2(0, -22), new Vector2(440, 60), TextAlignmentOptions.Center);
             money.text = "金币：--";
             money.color = new Color(1f, 0.86f, 0.4f);
 
             // Population
-            var pop = Text(panel, "Population", 36,
+            var pop = Text(panel, "Population", 30,
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0, -250), new Vector2(580, 50), TextAlignmentOptions.Center);
+                new Vector2(0, -92), new Vector2(440, 44), TextAlignmentOptions.Center);
             pop.text = "幼体 -- · 成体 --";
             pop.color = new Color(0.8f, 0.85f, 0.9f);
 
             // Buy button
             var buyBtn = MakeButton(panel, "BuyButton",
                 new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                new Vector2(0, -360), new Vector2(460, 96),
-                new Color(0.25f, 0.5f, 0.35f, 1f), 40, out var buyLabel);
+                new Vector2(0, -150), new Vector2(320, 74),
+                new Color(0.25f, 0.5f, 0.35f, 1f), 34, out var buyLabel);
             Localize(buyLabel, LocalizationTable.Keys.HudBuy);
 
-            // Pause + Language (bottom row of the panel)
+            // Pause + Language (bottom row of the card)
             var pauseBtn = MakeButton(panel, "PauseButton",
                 new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(-120, 60), new Vector2(220, 80),
-                new Color(0.2f, 0.45f, 0.55f, 1f), 36, out var pauseLabel);
+                new Vector2(-108, 22), new Vector2(200, 64),
+                new Color(0.2f, 0.45f, 0.55f, 1f), 30, out var pauseLabel);
             Localize(pauseLabel, LocalizationTable.Keys.Pause);
 
             var langBtn = MakeButton(panel, "LanguageButton",
                 new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(120, 60), new Vector2(220, 80),
-                new Color(0.2f, 0.45f, 0.55f, 1f), 36, out var langLabel);
+                new Vector2(108, 22), new Vector2(200, 64),
+                new Color(0.2f, 0.45f, 0.55f, 1f), 30, out var langLabel);
             Localize(langLabel, LocalizationTable.Keys.LanguageToggle);
 
             // Wire HudView
