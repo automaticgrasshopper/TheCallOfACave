@@ -41,7 +41,9 @@ namespace TCC.Gameplay
         private bool _working;        // parked inside the labor circle
 
         public CreatureStage Stage => _stage;
-        public bool IsWorking => _working && _stage == CreatureStage.Adult;
+        // Parked adults and elders both work (elders are slower earners); infants
+        // can never be parked, so they never count.
+        public bool IsWorking => _working && _stage != CreatureStage.Infant;
 
         /// <param name="ageFraction">Starting age as a fraction of the rolled lifespan
         /// (0 = newborn juvenile; ~0.3 = an established adult for the opening pop).</param>
@@ -141,9 +143,9 @@ namespace TCC.Gameplay
             var zone = _sim != null ? _sim.Labor : null;
             Vector2 pos = transform.position;
 
-            // Only prime adults may work the labor circle. Infants (pink) and elders
-            // are never admitted — dropping them inside bounces them back out.
-            bool canWork = _stage == CreatureStage.Adult;
+            // Adults and elders may work the labor circle (elders earn less). Infants
+            // (pink) are never admitted — dropping them inside bounces them back out.
+            bool canWork = _stage != CreatureStage.Infant;
             if (canWork && zone != null && zone.Contains(pos) && zone.TryPark(this))
             {
                 SetWorking(true); // dropped into the circle — start working

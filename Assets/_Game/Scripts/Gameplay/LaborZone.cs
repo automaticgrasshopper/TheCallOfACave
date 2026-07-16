@@ -14,7 +14,8 @@ namespace TCC.Gameplay
     {
         [SerializeField] private float _radius = 1.7f;
         [SerializeField] private int _capacity = 10;
-        [SerializeField] private int _incomePerSec = 2;
+        [SerializeField] private int _incomePerSec = 2;          // prime adult rate
+        [SerializeField] private float _elderIncomePerSec = 0.5f; // elders earn less (1 coin / 2s)
 
         private readonly List<Creature> _workers = new List<Creature>(16);
         private float _accrued; // fractional coins waiting to be paid out
@@ -46,16 +47,17 @@ namespace TCC.Gameplay
 
         private void Update()
         {
-            int working = 0;
+            float rate = 0f; // coins per second summed across active workers
             for (int i = _workers.Count - 1; i >= 0; i--)
             {
                 var w = _workers[i];
                 if (w == null) { _workers.RemoveAt(i); continue; }
-                if (w.IsWorking) working++;
+                if (!w.IsWorking) continue;
+                rate += w.Stage == CreatureStage.Elder ? _elderIncomePerSec : _incomePerSec;
             }
-            if (working == 0) return;
+            if (rate <= 0f) return;
 
-            _accrued += working * _incomePerSec * Time.deltaTime;
+            _accrued += rate * Time.deltaTime;
             if (_accrued < 1f) return;
 
             int coins = Mathf.FloorToInt(_accrued);
