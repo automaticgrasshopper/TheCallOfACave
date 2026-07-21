@@ -13,15 +13,20 @@ MonoBehaviour:
   m_Name: EconomyConfig
   m_EditorClassIdentifier:
   startMoney: 300
-  passiveIncome: 0
-  passiveIntervalSeconds: 10
-  laborIncomePerSec: 2
-  eggSellValue: 0
-  buyJuvenileCost: 120
-  buyFoodCost: 50
+  laborIncomePerSec: 0
+  buyJuvenileCost: 100
+  buyFoodCost: 30
   factoryBuildCost: 100
-  barracksBuildCost: 200
-  hospitalBuildCost: 500
-  academyBuildCost: 1000
-  doctorTrainingCoins: 300
-  doctorTrainingFood: 5
+  barracksBuildCost: 250
+  hospitalBuildCost: 400
+  academyBuildCost: 700
+  factoryUpgradeLevel2: 350
+  factoryUpgradeLevel3: 650
+  barracksUpgradeLevel2: 250
+  barracksUpgradeLevel3: 450
+  hospitalUpgradeLevel2: 250
+  hospitalUpgradeLevel3: 450
+  academyUpgradeLevel2: 900
+  academyUpgradeLevel3: 1300
+  doctorTrainingCoins: 150
+  doctorTrainingFood: 3

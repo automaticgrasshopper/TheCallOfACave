@@ -29,11 +29,11 @@ MonoBehaviour:
     zh: '投喂'
     en: 'Feed'
   - key: hud.buy
-    zh: '购买幼体 120'
-    en: 'Buy Bug 120'
+    zh: '购买幼体 100'
+    en: 'Buy Bug 100'
   - key: hud.buy_food
-    zh: '购买食物 50'
-    en: 'Buy Food 50'
+    zh: '购买食物 30'
+    en: 'Buy Food 30'
   - key: btn.language
     zh: 'EN'
     en: '中文'
@@ -119,8 +119,8 @@ MonoBehaviour:
     zh: '医学博士培养完成'
     en: 'Medical doctors are ready'
   - key: toast.need_academy_worker
-    zh: '医学院需要一名自由成虫；每名博士消耗300金币和5份食物'
-    en: 'Academy needs one free adult; each doctor costs 300 coins and 5 food'
+    zh: '医学院需要一名自由成虫；每名博士消耗150金币和3份食物'
+    en: 'Academy needs one free adult; each doctor costs 150 coins and 3 food'
   - key: zone.nursery
     zh: '育巢 · 孵化区'
     en: 'NURSERY · HATCHERY'

@@ -1,150 +1,193 @@
-# The Call of a Cave — Colony Loop Specification
+# The Call of a Cave — Three-Minute Colony Specification
 
 ## Vision
 
-A science-fiction pixel-art colony game about raising cave bugs in a barren underground settlement. The left side becomes a living camp-city through construction and upgrades; the right side is the invasion front. The player balances food, lifespan, labor, medicine, pollution control, and defense.
+A science-fiction pixel-art colony game about raising cave bugs in a barren underground settlement. The left side grows into a camp-city while the right side becomes an invasion front. Bugs do not obey movement orders: every unassigned bug wanders across the full cave, so protecting valuable population is part of the strategy.
+
+## Time Scale
+
+One colony year equals **5 real-time seconds**. A normal bug lives for **36 colony years / 180 real-time seconds / 3 minutes**.
+
+| Fixed timer | Value | Design purpose |
+| --- | ---: | --- |
+| Egg incubation | 15 s | Opening eggs hatch before the first larvae mature. |
+| Juvenile stage | 30 s | Ages 0–6. The player has a short setup window. |
+| Adult stage | 120 s | Ages 6–30. Main work, breeding and training window. |
+| Elder stage | 30 s | Ages 30–36. Final warning window before pollution-producing death. |
+| Normal lifespan | 180 s | Complete three-minute individual lifecycle. |
+| Health loss tick | 1 health / 2.5 s | 72 health lost over an untreated normal life. |
+| First egg delay | random 35–60 s after adulthood | Prevents synchronized population bursts. |
+| Later egg interval | 60 s | A free adult normally lays 1–2 eggs during adulthood. |
+| Factory production | 8 s per worker | Readable pickup cadence without flooding the map. |
+| Soldier training | 10 s | Exactly two colony years. |
+| Hospital cure | 5 s | Infection remains dangerous but treatment fits the short loop. |
+| Academy training | 10 s | Doctor response can happen inside the same crisis. |
+| Pollution cleaning | 1 s | Doctor must reach the source; cleanup itself stays brisk. |
+| First invasion | 90 s from game start | Divides the lifecycle into setup and danger halves. |
+| Combat attack interval | 0.75 s | A normal robot fight resolves in roughly 7–9 seconds. |
+
+Additional fixed timing:
+
+- Autonomous wander direction changes every randomized 1.08–2.52 seconds (1.8-second base × 0.6–1.4).
+- Pollution checks nearby bugs every 0.35 seconds.
+- Hit flash, shake, and knockback feedback lasts 0.22 seconds.
+- UI panels fade over 0.18 real-time seconds.
+- Toasts hold for 1.6 real-time seconds before fading out.
+- Block transitions wait 0.02 seconds after covering and 0.05 seconds at the dark midpoint.
+
+Time multipliers:
+
+- Health below 20: aging ×2 and factory efficiency ×0.5.
+- Infection: health loss ×2 and aging ×2.
+- Active soldier combat: aging ×1.5.
+- Multipliers stack.
+- Soldier training halves the bug's remaining lifespan on completion.
 
 ## Opening State
 
 - 300 coins.
-- 3 juvenile cave bugs in the open nursery.
-- 2 eggs in the nursery.
-- No adult bugs.
-- Factory, barracks, hospital, and medical academy begin as build sites.
-- Quicksand and the sand-river hazard are removed from this version.
+- 3 juvenile bugs in the open nursery.
+- 2 eggs in the nursery; they hatch at 15 seconds.
+- No adults and no food stock.
+- Factory, barracks, hospital, and medical academy begin as unbuilt sites.
+- Quicksand and the sand-river hazard are not part of this version.
 
-## Resources
+## Economy
 
-- Juvenile: 120 coins. Appears in the nursery.
-- Food: 50 coins per unit. Food is stored in the colony inventory.
-- Feeding: select/click a bug to consume one food and restore health.
-- Factory metal part: click to collect 200 coins.
-- Medical doctor: 300 coins plus 5 food per doctor, with one adult assigned to the academy.
+There is no passive income and eggs cannot be sold. Factory parts are the primary money source, so assigning adults to production sacrifices future eggs in exchange for economic growth.
 
-## Bug Life Cycle
+| Item or action | Cost / reward |
+| --- | ---: |
+| Buy juvenile | 100 coins |
+| Buy one food | 30 coins |
+| Feed one bug | 1 food; restores 35 health |
+| Collect one factory part | +80 coins |
+| Train one doctor | 150 coins + 3 food |
 
-One colony year equals 10 real-time seconds. A normal bug lives for 36 years / 360 seconds.
+### Economy pacing target
+
+- Building the factory immediately leaves 200 coins.
+- The first 3 larvae mature at 30 seconds; the 2 opening eggs become adults at 45 seconds.
+- Two healthy factory workers operating from 30 to 90 seconds produce about 14 parts, worth roughly 1,120 coins.
+- That supports a barracks and hospital before the first invasion, or an academy-focused route, but does not fund every building and upgrade at once.
+- A single full-adult-stage factory worker can produce about 15 parts / 1,200 coins. The same free adult would instead lay roughly 1–2 eggs.
+
+## Bug Life, Health, and Roles
 
 | Stage | Real time | Colony age | Rules |
 | --- | ---: | ---: | --- |
-| Juvenile | 0–60 s | 0–6 | Wanders; cannot work or train. |
-| Adult | 60–300 s | 6–30 | Can be assigned to facilities. |
-| Elder | 300–360 s | 30–36 | Uses the elder sprite; dies at 36. |
+| Juvenile | 0–30 s | 0–6 | Wanders; cannot work or train. |
+| Adult | 30–150 s | 6–30 | Can breed or be assigned to a facility. |
+| Elder | 150–180 s | 30–36 | Uses the elder sprite and leaves pollution on death. |
 
-Every bug has two world-space bars:
+Every bug has world-space health and age bars. Soldiers add a combat-health bar.
 
-- Health: starts at 100 and loses 1 point every 5 seconds.
-- Age/lifespan: fills from age 0 to 36, gaining one year every 10 seconds.
-- Health 50–100: green; health 20–50: yellow; below 20: red.
-- Below 20 health: aging speed ×2; factory efficiency ×0.5.
-- On ordinary or soldier hit: flash red, shake briefly, and receive light knockback.
+- Health starts at 100.
+- Health 50–100 is green, 20–50 yellow, and below 20 red.
+- Clicking a bug consumes one stored food and heals 35 health.
+- Hits flash the bug red, shake it, and apply light knockback.
+- The nursery is only a spawn point. All unassigned juveniles, adults, elders, and soldiers wander over the complete map.
+- Constructed facilities are walls to autonomous bugs; the nursery remains open.
 
-### Reproduction and Role Trade-off
+### Reproduction trade-off
 
-- Only unassigned normal adults lay eggs.
-- A soldier, medical doctor, factory worker, barracks trainee, hospital patient, or academy assignee does not lay eggs.
-- Baseline laying interval: 120 seconds, with the first egg randomized between 70 and 120 seconds so several adults do not lay simultaneously.
-- Eggs hatch after 30 seconds; the live-creature cap remains 40 for the first balance pass.
-- A free adult therefore produces roughly 1–2 eggs during its 240-second adult stage. Assigning it to production or a profession sacrifices that future population growth.
+- Only an unassigned normal adult lays eggs.
+- Factory workers, soldiers, barracks trainees, hospital patients, and academy workers do not lay eggs.
+- First egg: 35–60 seconds after becoming adult; later eggs: every 60 seconds.
+- Eggs hatch after 15 seconds.
+- Maximum live bugs: 40; maximum simultaneous eggs: 30.
 
 ## Disease and Pollution
 
-- An elder dying leaves a mutated oil-like contamination source.
-- A soldier dying in combat also leaves contamination.
-- A bug touching contamination becomes infected.
-- Infection causes health loss ×2 and aging speed ×2.
-- Multipliers stack with critical-health aging.
-- An infected bug placed in a hospital is cured after 10 seconds.
-- Infection penalties continue during treatment.
-- The player must drag the cured bug out of the hospital.
+- Elder death and soldier combat death leave mutated oil pollution.
+- A bug touching pollution becomes infected.
+- Infection doubles both health loss and aging speed.
+- An infected bug is cured after 5 seconds in a hospital; penalties continue during treatment.
+- A cured patient stays in the hospital until the player drags it out.
+- A doctor cleans a pollution source after reaching it and working for 1 second.
+- Doctors automatically seek pollution and return toward the academy when idle; the player can drag them.
 
 ## Facilities
 
-Normal wandering bugs treat every constructed facility except the nursery as a wall and path around it. Adults enter only when the player drags and drops them into a valid facility.
-
-The nursery is only a spawn point. Every unassigned juvenile, adult, elder, and soldier can wander across the entire map without player orders. As the right side becomes dangerous, keeping valuable bugs in safe facilities or manually relocating them is a central risk-management mechanic.
+All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The academy instead trains **2 / 4 / 6 doctors per batch**. Facility core visuals grow with each level.
 
 ### Factory
 
-- Build: 100 coins.
-- Level 1 / 2 / 3 capacity: 3 / 5 / 10.
-- Upgrade costs: 600, then 1000 coins.
-- Assigned adults are permanently committed and cannot be dragged out.
-- Assignment changes the adult to the dedicated factory-worker appearance.
-- Each healthy adult produces one metal part every 10 seconds.
-- Critical-health adults produce at half efficiency.
-- A produced part appears beside the factory and grants 200 coins when clicked.
+| Level | Capacity | Build / upgrade cost |
+| --- | ---: | ---: |
+| 1 | 3 | 100 |
+| 2 | 5 | 350 |
+| 3 | 10 | 650 |
+
+- Healthy worker: one 80-coin part every 8 seconds.
+- Below 20 health: one part effectively every 16 seconds.
+- Factory assignment is permanent and uses the dedicated worker appearance.
 
 ### Barracks
 
-- Build: 200 coins.
-- Level 1 / 2 / 3 capacity: 3 / 5 / 10.
-- Upgrade costs: 300, then 500 coins.
-- Adult soldier training consumes two colony years / 20 seconds.
-- Soldiers have walk, attack, and hit states plus a combat-health bar.
-- Soldier maximum remaining lifespan is half that of a normal bug.
-- Aging speed during combat: ×1.5.
+| Level | Capacity | Build / upgrade cost |
+| --- | ---: | ---: |
+| 1 | 3 | 250 |
+| 2 | 5 | 250 |
+| 3 | 10 | 450 |
+
+- Training takes 10 seconds / two colony years.
+- Completion halves remaining lifespan and creates a soldier with 100 combat health.
 
 ### Hospital
 
-- Build: 500 coins.
-- Level 1 / 2 / 3 capacity: 3 / 5 / 10.
-- Upgrade costs: 300, then 500 coins.
-- Infected bugs are cured after 10 seconds inside.
-- Injured soldiers also recover combat health there.
-- Patients remain assigned until manually removed.
+| Level | Capacity | Build / upgrade cost |
+| --- | ---: | ---: |
+| 1 | 3 | 400 |
+| 2 | 5 | 250 |
+| 3 | 10 | 450 |
+
+- Infection cure: 5 seconds.
+- Soldiers recover 8 combat health per second while inside.
+- Patients remain until manually removed.
 
 ### Medical Academy
 
-- Build: 1000 coins.
-- Level 1 / 2 / 3 batch size: 2 / 4 / 6 doctors.
-- Upgrade costs: 2000, then 3000 coins.
-- A batch requires one assigned adult; every doctor in that batch costs 300 coins and 5 food.
-- Training time: 20 seconds.
-- A doctor can be dragged by the player.
-- An idle doctor automatically seeks nearby contamination.
-- Cleaning takes 2 seconds and displays a progress bar.
-- After cleaning, the doctor automatically returns to the academy; manual return is faster.
+| Level | Doctors per batch | Build / upgrade cost |
+| --- | ---: | ---: |
+| 1 | 2 | 700 |
+| 2 | 4 | 900 |
+| 3 | 6 | 1300 |
+
+- Requires at least one assigned free adult.
+- Training takes 10 seconds.
+- Every doctor in the batch costs 150 coins and 3 food; costs multiply by batch size.
 
 ## Invasion and Combat
 
-- The first invasion starts after 180 seconds from game start.
-- Enemies enter from the right side.
-- Initial enemy type: a small scavenger robot.
-- Robot attack and defense are slightly stronger than one soldier.
-- Two soldiers should reliably defeat one robot; one soldier may win but is likely to die.
-- Soldiers automatically engage nearby enemies after the player deploys them.
-- Combat-health reaching zero kills a soldier immediately and leaves contamination.
-
-## Failure State
-
-When every living bug is dead, enter Game Over even if eggs, doctors, or facilities remain. The failure screen, toast, alert, and transition block remain bilingual UI systems.
+- The first scavenger robot enters from the right at 90 seconds.
+- Soldier and robot attack interval: 0.75 seconds.
+- Soldier: 100 combat health, 10 damage.
+- Robot: 110 health, 11 damage.
+- One soldier may win but is likely to die; two soldiers reliably defeat one robot.
+- A soldier ages ×1.5 while actively fighting.
+- Combat health reaching zero kills the soldier and produces pollution.
 
 ## Interaction Rules
 
-- Nursery has no wall and can be crossed freely.
-- All unassigned bugs wander across the complete cave, not only near the nursery or on the colony side.
-- Unbuilt facility site: click to construct if resources allow.
-- Constructed facility: Shift-click to upgrade.
-- Medical academy: normal click starts a doctor batch when its requirements are met.
-- Adult bugs are assigned by drag-and-drop.
-- Factory workers are locked in; hospital patients and trained roles remain draggable where specified.
-- All player-facing strings must be added to `LocalizationTable` in both Chinese and English.
+- Click an unbuilt site to construct it.
+- Shift-click a constructed facility to upgrade it.
+- Click the academy to start a doctor batch when its requirements are met.
+- Drag adults into facilities.
+- Factory workers are locked in; hospital patients can be removed; trained soldiers are released from barracks.
+- Drag a soldier to the right side to deploy it for automatic combat.
+- Click metal parts to collect their value.
+- Click bugs to feed them.
+- All player-facing text must exist in Chinese and English in `LocalizationTable`.
 
-## Implementation Roadmap
+## Failure State
 
-1. Remove all sand-river scene objects, scripts, notifications, and text references.
-2. Lock the opening state, resource prices, health decay, and 36-year lifecycle.
-3. Add world-space health/age/combat bars and the elder visual.
-4. Add buildable/upgradable facility sites and obstacle avoidance.
-5. Implement factory worker commitment, timed parts, and click collection.
-6. Implement infection, pollution, hospital treatment, and combat healing.
-7. Implement barracks training, soldiers, robot invasion, and combat.
-8. Implement academy batches, doctors, automatic cleaning, and return behavior.
-9. Finish bilingual UI feedback, visual states per facility level, balancing, and play-mode tests.
+When every living bug is dead, enter Game Over even if eggs, doctors, facilities, or resources remain.
 
-## Required Art Set
+## Remaining Art Polish
 
-- Existing: egg, juvenile, adult idle/walk, factory worker, soldier idle/walk/attack, barren cave background, facility rings.
-- Added in this pass: elder bug, scavenger robot, mutated-oil contamination, medical doctor.
-- Still desirable for final polish: robot walk/attack sheet, doctor walk/clean sheet, metal-part pickup animation, three construction/upgrade variants for each facility, food icon, infection overlay, hit sparks, and death dissolve.
+- Robot walk and attack sheet.
+- Doctor walk and cleaning sheet.
+- Metal-part pickup animation.
+- Three construction/upgrade variants per facility.
+- Food icon, infection overlay, hit sparks, and death dissolve.

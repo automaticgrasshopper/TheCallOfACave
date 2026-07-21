@@ -123,11 +123,16 @@ namespace TCC.Gameplay
         private void TryUpgrade()
         {
             if (_level >= 3) return;
-            int cost;
-            if (_type == FacilityType.Factory) cost = _level == 1 ? 600 : 1000;
-            else if (_type == FacilityType.Academy) cost = _level == 1 ? 2000 : 3000;
-            else cost = _level == 1 ? 300 : 500;
-            if (!EconomyManager.Exists || !EconomyManager.Instance.TrySpend(cost))
+            var eco = EconomyManager.Exists ? EconomyManager.Instance : null;
+            if (eco == null || eco.Config == null) return;
+            int cost = _type == FacilityType.Factory
+                ? (_level == 1 ? eco.Config.factoryUpgradeLevel2 : eco.Config.factoryUpgradeLevel3)
+                : _type == FacilityType.Barracks
+                    ? (_level == 1 ? eco.Config.barracksUpgradeLevel2 : eco.Config.barracksUpgradeLevel3)
+                    : _type == FacilityType.Hospital
+                        ? (_level == 1 ? eco.Config.hospitalUpgradeLevel2 : eco.Config.hospitalUpgradeLevel3)
+                        : (_level == 1 ? eco.Config.academyUpgradeLevel2 : eco.Config.academyUpgradeLevel3);
+            if (!eco.TrySpend(cost))
             {
                 ToastView.Instance?.Key(LocalizationTable.Keys.ToastInsufficientFunds);
                 return;
@@ -195,7 +200,7 @@ namespace TCC.Gameplay
                 }
                 else if (_type == FacilityType.Hospital)
                 {
-                    slot.creature.HealCombat(Time.deltaTime * 8f);
+                    slot.creature.HealCombat(Time.deltaTime * cfg.hospitalCombatHealPerSecond);
                     if (slot.creature.IsInfected)
                     {
                         slot.timer += Time.deltaTime;

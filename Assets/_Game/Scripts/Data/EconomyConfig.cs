@@ -2,35 +2,39 @@ using UnityEngine;
 
 namespace TCC.Data
 {
-    /// <summary>Money-side tuning. Income comes from three taps (a slow passive
-    /// drip, prime adults working the labor circle, and selling eggs); the only
-    /// sink is buying new juveniles to keep the colony from aging out.</summary>
+    /// <summary>Three-minute economy tuning. Income comes from manually collected
+    /// factory parts; spending competes across population, food, facilities and roles.</summary>
     [CreateAssetMenu(menuName = "TCC/Economy Config", fileName = "EconomyConfig")]
     public class EconomyConfig : ScriptableObject
     {
         [Tooltip("Coins the player starts with.")]
         public int startMoney = 300;
 
-        [Header("Passive income")]
-        [Tooltip("Coins granted every interval, regardless of anything else.")]
-        public int passiveIncome = 0;
-        public float passiveIntervalSeconds = 10f;
+        // Legacy scene-bootstrap compatibility; the old passive LaborZone is
+        // disabled by ScenePresentationBaker and pays nothing in the live game.
+        [HideInInspector] public int laborIncomePerSec = 0;
 
-        [Header("Labor")]
-        [Tooltip("Coins per second earned by each prime adult inside the labor circle.")]
-        public int laborIncomePerSec = 2;
-
-        [Header("Eggs & buying")]
-        [Tooltip("Coins earned when an egg is clicked (sold) instead of left to hatch.")]
-        public int eggSellValue = 0;
+        [Header("Buying")]
         [Tooltip("Coins to buy one juvenile into the nursery.")]
-        public int buyJuvenileCost = 120;
-        public int buyFoodCost = 50;
+        public int buyJuvenileCost = 100;
+        public int buyFoodCost = 30;
         public int factoryBuildCost = 100;
-        public int barracksBuildCost = 200;
-        public int hospitalBuildCost = 500;
-        public int academyBuildCost = 1000;
-        public int doctorTrainingCoins = 300;
-        public int doctorTrainingFood = 5;
+        public int barracksBuildCost = 250;
+        public int hospitalBuildCost = 400;
+        public int academyBuildCost = 700;
+
+        [Header("Facility upgrades: level 1 -> 2 -> 3")]
+        public int factoryUpgradeLevel2 = 350;
+        public int factoryUpgradeLevel3 = 650;
+        public int barracksUpgradeLevel2 = 250;
+        public int barracksUpgradeLevel3 = 450;
+        public int hospitalUpgradeLevel2 = 250;
+        public int hospitalUpgradeLevel3 = 450;
+        public int academyUpgradeLevel2 = 900;
+        public int academyUpgradeLevel3 = 1300;
+
+        [Header("Medical doctors: per doctor")]
+        public int doctorTrainingCoins = 150;
+        public int doctorTrainingFood = 3;
     }
 }

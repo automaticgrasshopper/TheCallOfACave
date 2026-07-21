@@ -16,12 +16,9 @@ namespace TCC.Managers
 
         public int Money { get; private set; }
         public int Food { get; private set; }
-        public int EggSellValue => _config != null ? _config.eggSellValue : 0;
         public int BuyJuvenileCost => _config != null ? _config.buyJuvenileCost : 0;
         public int BuyFoodCost => _config != null ? _config.buyFoodCost : 0;
         public EconomyConfig Config => _config;
-
-        private float _passiveTimer;
 
         protected override void OnAwake()
         {
@@ -31,14 +28,12 @@ namespace TCC.Managers
         private void OnEnable()
         {
             GameEvents.SpendRequested += OnSpendRequested;
-            GameEvents.EggCollected += OnEggCollected;
             GameEvents.MoneyEarned += OnMoneyEarned;
         }
 
         private void OnDisable()
         {
             GameEvents.SpendRequested -= OnSpendRequested;
-            GameEvents.EggCollected -= OnEggCollected;
             GameEvents.MoneyEarned -= OnMoneyEarned;
         }
 
@@ -47,19 +42,6 @@ namespace TCC.Managers
             // Broadcast the opening balance once every listener (UI) is subscribed.
             GameEvents.RaiseMoneyChanged(Money);
             GameEvents.RaiseFoodChanged(Food);
-        }
-
-        private void Update()
-        {
-            // Passive drip. deltaTime is 0 while paused/at menu (timeScale 0), so the
-            // income naturally halts when the game isn't running.
-            if (_config == null || _config.passiveIntervalSeconds <= 0f) return;
-            _passiveTimer += Time.deltaTime;
-            if (_passiveTimer >= _config.passiveIntervalSeconds)
-            {
-                _passiveTimer -= _config.passiveIntervalSeconds;
-                Add(_config.passiveIncome);
-            }
         }
 
         public bool CanAfford(int amount) => Money >= amount;
@@ -113,7 +95,6 @@ namespace TCC.Managers
             result?.Invoke(true);
         }
 
-        private void OnEggCollected(int value, Vector2 _) => Add(value);
         private void OnMoneyEarned(int amount) => Add(amount);
     }
 }

@@ -9,7 +9,7 @@ namespace TCC.Gameplay
     public class BarracksZone : MonoBehaviour
     {
         [SerializeField] private float _radius = 1.35f;
-        [SerializeField] private float _duration = 20f;
+        [SerializeField] private float _duration = 10f;
         [SerializeField] private SpriteRenderer _barBack;
         [SerializeField] private SpriteRenderer _barFill;
         private Creature _trainee;

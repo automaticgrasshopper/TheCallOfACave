@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0000000000000000000000000000001, type: 3}
   m_Name: SimulationConfig
   m_EditorClassIdentifier:
-  moveSpeed: 0.9
-  wanderChangeInterval: 2.4
-  totalLifespanSeconds: 360
-  juvenileSeconds: 60
-  elderStartSeconds: 300
+  moveSpeed: 1
+  wanderChangeInterval: 1.8
+  totalLifespanSeconds: 180
+  juvenileSeconds: 30
+  elderStartSeconds: 150
   healthMax: 100
-  healthLossInterval: 5
+  healthLossInterval: 2.5
   healthLossPerTick: 1
   foodHealing: 35
   criticalHealth: 20
   criticalAgeMultiplier: 2
   infectedHealthMultiplier: 2
   infectedAgeMultiplier: 2
-  eggLayIntervalSeconds: 120
-  firstEggMinSeconds: 70
-  eggHatchSeconds: 30
+  eggLayIntervalSeconds: 60
+  firstEggMinSeconds: 35
+  eggHatchSeconds: 15
   maxEggs: 30
   maxCreatures: 40
   infantScale: 0.52
@@ -36,17 +36,18 @@ MonoBehaviour:
   startInfants: 3
   startAdults: 0
   startEggs: 2
-  soldierTrainingSeconds: 20
+  soldierTrainingSeconds: 10
   soldierRemainingLifeMultiplier: 0.5
-  factoryPartInterval: 10
-  factoryPartValue: 200
-  hospitalTreatmentSeconds: 10
-  academyTrainingSeconds: 20
-  contaminationCleanSeconds: 2
-  firstInvasionSeconds: 180
+  factoryPartInterval: 8
+  factoryPartValue: 80
+  hospitalTreatmentSeconds: 5
+  hospitalCombatHealPerSecond: 8
+  academyTrainingSeconds: 10
+  contaminationCleanSeconds: 1
+  firstInvasionSeconds: 90
   soldierMaxHealth: 100
   enemyMaxHealth: 110
   soldierDamage: 10
   enemyDamage: 11
-  attackInterval: 1
+  attackInterval: 0.75
   combatAgeMultiplier: 1.5
