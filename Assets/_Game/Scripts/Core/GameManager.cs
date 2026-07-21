@@ -1,4 +1,5 @@
 using UnityEngine;
+using TCC.UI;
 
 namespace TCC.Core
 {
@@ -28,6 +29,9 @@ namespace TCC.Core
 
         private void Start()
         {
+            // The loss overlay is still backward-compatible with older scenes.
+            // The art director itself is now a normal, scene-wired component.
+            GameOverView.Ensure();
             if (BootIntoPlay)
             {
                 BootIntoPlay = false;

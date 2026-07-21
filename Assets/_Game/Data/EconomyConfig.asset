@@ -12,9 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0000000000000000000000000000002, type: 3}
   m_Name: EconomyConfig
   m_EditorClassIdentifier:
-  startMoney: 100
-  passiveIncome: 1
+  startMoney: 300
+  passiveIncome: 0
   passiveIntervalSeconds: 10
   laborIncomePerSec: 2
-  eggSellValue: 100
+  eggSellValue: 0
   buyJuvenileCost: 120
+  buyFoodCost: 50
+  factoryBuildCost: 100
+  barracksBuildCost: 200
+  hospitalBuildCost: 500
+  academyBuildCost: 1000
+  doctorTrainingCoins: 300
+  doctorTrainingFood: 5

@@ -2,22 +2,14 @@ using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Managers;
+using TCC.UI;
 
 namespace TCC.Gameplay
 {
-    /// <summary>
-    /// A cave bug. It is an autonomous agent driven purely by age: it wanders the
-    /// activity area, ages juvenile -> prime -> elder on a lifespan timer, lays eggs
-    /// while prime, and dies of old age. The player can pick it up and drop it into
-    /// the labor circle, where a prime bug "works" (the <see cref="LaborZone"/> pays
-    /// out); dragging it back out sets it wandering again. Visuals are procedural
-    /// (squash bob) per the project's "juice over keyframes" taste.
-    /// </summary>
-    [RequireComponent(typeof(SpriteRenderer))]
-    [RequireComponent(typeof(CircleCollider2D))]
+    [RequireComponent(typeof(SpriteRenderer), typeof(CircleCollider2D))]
     public class Creature : MonoBehaviour
     {
-        [Header("Stage sprites (set on prefab)")]
+        [Header("Prefab fallback sprites")]
         [SerializeField] private Sprite _infantSprite;
         [SerializeField] private Sprite _adultSprite;
         [SerializeField] private Sprite _elderSprite;
@@ -25,196 +17,339 @@ namespace TCC.Gameplay
         private SpriteRenderer _sr;
         private SimulationManager _sim;
         private SimulationConfig _cfg;
-
+        private WorldStatusBars _bars;
         private CreatureStage _stage;
+        private CreatureRole _role = CreatureRole.Free;
+        private CreatureRole _roleBeforeHospital = CreatureRole.Free;
+        private ColonyFacility _facility;
         private float _age;
         private float _lifespan;
-        private float _juvenileEnd;   // age at which prime begins
-        private float _primeEnd;      // age at which elder begins
+        private float _health;
+        private float _combatHealth;
         private float _layTimer;
+        private float _wanderTimer;
+        private Vector2 _wanderDir;
+        private bool _infected;
+        private bool _dragging;
+        private bool _dragMoved;
+        private Vector2 _dragStart;
+        private bool _combatDeployed;
+        private float _attackTimer;
+        private float _hitTimer;
+        private Vector2 _knockbackDir;
         private float _wobblePhase;
 
-        private Vector2 _wanderDir;
-        private float _wanderTimer;
-
-        private bool _dragging;
-        private bool _working;        // parked inside the labor circle
+        private static Sprite _infant, _adult, _worker, _elder, _soldier;
+        private static Sprite[] _adultWalk, _soldierAttack;
 
         public CreatureStage Stage => _stage;
-        // Parked adults and elders both work (elders are slower earners); infants
-        // can never be parked, so they never count.
-        public bool IsWorking => _working && _stage != CreatureStage.Infant;
+        public CreatureRole Role => _role;
+        public bool IsSoldier => _role == CreatureRole.Soldier;
+        public bool IsFreeAdult => _stage == CreatureStage.Adult && _role == CreatureRole.Free;
+        public bool IsWorking => _role == CreatureRole.FactoryWorker;
+        public bool IsTraining => _role == CreatureRole.BarracksTrainee;
+        public bool IsInfected => _infected;
+        public bool IsCritical => _health < _cfg.criticalHealth;
+        public float Health01 => _health / _cfg.healthMax;
+        public Vector2 Position => transform.position;
 
-        /// <param name="ageFraction">Starting age as a fraction of the rolled lifespan
-        /// (0 = newborn juvenile; ~0.3 = an established adult for the opening pop).</param>
         public void Init(SimulationManager sim, SimulationConfig cfg, float ageFraction)
         {
             _sim = sim;
             _cfg = cfg;
             _sr = GetComponent<SpriteRenderer>();
-            _lifespan = Random.Range(cfg.lifespanMin, cfg.lifespanMax);
-            _juvenileEnd = _lifespan * cfg.juvenileFraction;
-            _primeEnd = _lifespan * Mathf.Clamp01(cfg.juvenileFraction + cfg.primeFraction);
+            _bars = GetComponent<WorldStatusBars>() ?? gameObject.AddComponent<WorldStatusBars>();
+            _lifespan = cfg.totalLifespanSeconds;
             _age = _lifespan * Mathf.Clamp01(ageFraction);
+            _health = cfg.healthMax;
+            _combatHealth = cfg.soldierMaxHealth;
+            _layTimer = Random.Range(cfg.firstEggMinSeconds, cfg.eggLayIntervalSeconds);
             _wobblePhase = Random.value * Mathf.PI * 2f;
             PickWander();
-            EnterStage(StageForAge(_age), initial: true);
+            EnterStage(StageForAge(_age), true);
         }
 
         private void Update()
         {
             if (_cfg == null || _dragging) return;
             float dt = Time.deltaTime;
+            float ageMultiplier = (_infected ? _cfg.infectedAgeMultiplier : 1f)
+                * (IsCritical ? _cfg.criticalAgeMultiplier : 1f)
+                * (IsSoldier && IsInCombat() ? _cfg.combatAgeMultiplier : 1f);
+            _age += dt * ageMultiplier;
+            _health = Mathf.Max(0f, _health - dt * (_cfg.healthLossPerTick / Mathf.Max(.1f, _cfg.healthLossInterval))
+                * (_infected ? _cfg.infectedHealthMultiplier : 1f));
+            if (_age >= _lifespan || _health <= 0f) { Die(); return; }
 
-            _age += dt;
-            if (_age >= _lifespan) { Die(); return; }
+            if (!IsSoldier)
+            {
+                CreatureStage next = StageForAge(_age);
+                if (next != _stage) EnterStage(next);
+            }
 
-            var target = StageForAge(_age);
-            if (target != _stage) EnterStage(target);
+            if (IsFreeAdult)
+            {
+                _layTimer -= dt;
+                if (_layTimer <= 0f)
+                {
+                    _layTimer += _cfg.eggLayIntervalSeconds;
+                    _sim.LayEgg(transform.position);
+                }
+            }
 
-            if (!_working) UpdateMovement(dt);
-            if (_stage == CreatureStage.Adult) UpdateBreeding(dt);
+            bool parked = _role == CreatureRole.FactoryWorker || _role == CreatureRole.BarracksTrainee
+                || _role == CreatureRole.HospitalPatient || _role == CreatureRole.AcademyWorker;
+            if (!parked)
+            {
+                if (!UpdateCombat(dt)) UpdateMovement(dt);
+            }
+            if (_hitTimer > 0f)
+            {
+                transform.position = _sim.ClampWorld((Vector2)transform.position + _knockbackDir * 1.4f * dt);
+                _hitTimer -= dt;
+            }
+            _attackTimer = Mathf.Max(0f, _attackTimer - dt);
             UpdateVisuals();
+            _bars.Set(Health01, _age / _lifespan, IsSoldier ? _combatHealth / _cfg.soldierMaxHealth : -1f);
         }
 
-        private CreatureStage StageForAge(float age)
-            => age < _juvenileEnd ? CreatureStage.Infant
-             : age < _primeEnd ? CreatureStage.Adult
+        private CreatureStage StageForAge(float value)
+            => value < _cfg.juvenileSeconds ? CreatureStage.Infant
+             : value < _cfg.elderStartSeconds ? CreatureStage.Adult
              : CreatureStage.Elder;
 
-        // ---- movement ----------------------------------------------------
         private void UpdateMovement(float dt)
         {
             _wanderTimer -= dt;
             if (_wanderTimer <= 0f) PickWander();
-
-            // Everything crawls; infants are the slowest, elders a touch slower than prime.
-            float stageMul = _stage == CreatureStage.Infant ? 0.5f
-                           : _stage == CreatureStage.Adult ? 0.8f
-                           : 0.6f;
-            float speed = _cfg.moveSpeed * stageMul;
-            Vector2 next = (Vector2)transform.position + _wanderDir * speed * dt;
-            next = _sim.ClampToActivity(next);
-            next = KeepOutOfLabor(next);
+            float multiplier = _stage == CreatureStage.Infant ? .52f : _stage == CreatureStage.Elder ? .58f : .82f;
+            Vector2 next = (Vector2)transform.position + _wanderDir * _cfg.moveSpeed * multiplier * dt;
+            // The nursery is only a spawn point. Every unassigned bug can drift
+            // across the whole cave, including the future invasion side.
+            next = _sim.ClampWorld(next);
+            next = _sim.PushOutsideFacilities(next, _facility);
             transform.position = next;
+            if (Mathf.Abs(_wanderDir.x) > .01f) _sr.flipX = _wanderDir.x < 0f;
+        }
 
-            if (Mathf.Abs(_wanderDir.x) > 0.01f)
-                _sr.flipX = _wanderDir.x < 0f;
+        private bool UpdateCombat(float dt)
+        {
+            if (!IsSoldier || !_combatDeployed) return false;
+            var enemy = _sim.ClosestEnemy(transform.position);
+            if (enemy == null) return false;
+            Vector2 delta = enemy.Position - (Vector2)transform.position;
+            if (delta.sqrMagnitude > .7f * .7f)
+            {
+                transform.position = _sim.ClampWorld((Vector2)transform.position + delta.normalized * _cfg.moveSpeed * .95f * dt);
+                _sr.flipX = delta.x < 0f;
+            }
+            else if (_attackTimer <= 0f)
+            {
+                _attackTimer = _cfg.attackInterval;
+                enemy.TakeDamage(_cfg.soldierDamage);
+            }
+            return true;
+        }
+
+        private bool IsInCombat()
+        {
+            var enemy = _sim != null ? _sim.ClosestEnemy(transform.position) : null;
+            return enemy != null && (enemy.Position - (Vector2)transform.position).sqrMagnitude < 1.2f * 1.2f;
         }
 
         private void PickWander()
         {
             _wanderDir = Random.insideUnitCircle.normalized;
-            _wanderTimer = _cfg.wanderChangeInterval * Random.Range(0.6f, 1.4f);
+            _wanderTimer = _cfg.wanderChangeInterval * Random.Range(.6f, 1.4f);
         }
 
-        // ---- breeding ----------------------------------------------------
-        private void UpdateBreeding(float dt)
-        {
-            _layTimer += dt;
-            if (_layTimer >= _cfg.eggLayIntervalSeconds)
-            {
-                _layTimer = 0f;
-                _sim.LayEgg(transform.position);
-            }
-        }
-
-        // ---- drag & labor ------------------------------------------------
-        private bool CanInteract => !(GameManager.Exists && GameManager.Instance.State != GameState.Playing);
+        private bool CanInteract => !GameManager.Exists || GameManager.Instance.State == GameState.Playing;
 
         private void OnMouseDown()
         {
             if (!CanInteract) return;
-            _dragging = true;
-            if (_working) SetWorking(false); // lift it out of the labor pool while held
+            _dragStart = transform.position;
+            _dragMoved = false;
+            _dragging = _role == CreatureRole.Free || _role == CreatureRole.Soldier || _role == CreatureRole.HospitalPatient;
         }
 
         private void OnMouseDrag()
         {
-            if (!_dragging) return;
-            transform.position = MouseWorld();
+            if (!_dragging || Camera.main == null) return;
+            Vector3 world = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            transform.position = new Vector3(world.x, world.y, 0f);
+            _dragMoved |= ((Vector2)transform.position - _dragStart).sqrMagnitude > .08f * .08f;
         }
 
         private void OnMouseUp()
         {
+            if (!CanInteract) return;
+            if (!_dragMoved)
+            {
+                _dragging = false;
+                TryFeed();
+                return;
+            }
             if (!_dragging) return;
             _dragging = false;
-
-            var zone = _sim != null ? _sim.Labor : null;
             Vector2 pos = transform.position;
 
-            // Adults and elders may work the labor circle (elders earn less). Infants
-            // (pink) are never admitted — dropping them inside bounces them back out.
-            bool canWork = _stage != CreatureStage.Infant;
-            if (canWork && zone != null && zone.Contains(pos) && zone.TryPark(this))
+            if (_role == CreatureRole.HospitalPatient && _facility != null && !_facility.Contains(pos))
+                _facility.TryRelease(this);
+
+            var destination = _sim.FindFacilityAt(pos);
+            if (_role == CreatureRole.Free && _stage == CreatureStage.Adult && destination != null)
             {
-                SetWorking(true); // dropped into the circle — start working
+                if (destination.TryAssign(this)) return;
             }
-            else
+            if (IsSoldier && pos.x > .5f) _combatDeployed = true;
+            transform.position = _sim.PushOutsideFacilities(_sim.ClampWorld(pos), _facility);
+            PickWander();
+        }
+
+        private void TryFeed()
+        {
+            if (!EconomyManager.Exists || !EconomyManager.Instance.TryConsumeFood(1))
             {
-                SetWorking(false);
-                pos = _sim.ClampToActivity(pos); // snap back into bounds
-                transform.position = KeepOutOfLabor(pos);
-                PickWander();
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastNoFood);
+                return;
             }
+            _health = Mathf.Min(_cfg.healthMax, _health + _cfg.foodHealing);
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodUsed);
         }
 
-        /// <summary>Push a non-working creature to the labor circle's edge so it can
-        /// never rest inside the reserved work zone.</summary>
-        private Vector2 KeepOutOfLabor(Vector2 pos)
+        public void AssignTo(ColonyFacility facility, CreatureRole role)
         {
-            var zone = _sim != null ? _sim.Labor : null;
-            if (zone == null) return pos;
-            Vector2 d = pos - zone.Center;
-            float r = zone.Radius + 0.2f;
-            if (d.sqrMagnitude >= r * r) return pos;
-            if (d.sqrMagnitude < 0.0001f) d = Vector2.down;
-            return _sim.ClampToActivity(zone.Center + d.normalized * r);
+            if (role == CreatureRole.HospitalPatient) _roleBeforeHospital = _role;
+            _facility = facility;
+            _role = role;
+            if (role == CreatureRole.FactoryWorker && WorkerSprite != null) _sr.sprite = WorkerSprite;
         }
 
-        private void SetWorking(bool on)
+        public void ReleaseFromFacility()
         {
-            if (_working == on) return;
-            _working = on;
-            if (!on && _sim != null && _sim.Labor != null) _sim.Labor.Unpark(this);
+            if (_role == CreatureRole.HospitalPatient)
+                _role = _roleBeforeHospital == CreatureRole.Soldier ? CreatureRole.Soldier : CreatureRole.Free;
+            else _role = CreatureRole.Free;
+            _facility = null;
+            RefreshBaseSprite();
+            PickWander();
         }
 
-        private Vector2 MouseWorld()
+        public void CompleteFacilitySoldierTraining()
         {
-            var cam = Camera.main;
-            if (cam == null) return transform.position;
-            Vector3 w = cam.ScreenToWorldPoint(Input.mousePosition);
-            return new Vector2(w.x, w.y);
+            _facility = null;
+            _role = CreatureRole.Soldier;
+            _stage = CreatureStage.Soldier;
+            _combatHealth = _cfg.soldierMaxHealth;
+            _lifespan = _age + Mathf.Max(1f, (_cfg.totalLifespanSeconds - _age) * _cfg.soldierRemainingLifeMultiplier);
+            RefreshBaseSprite();
+            _sim.NotifyStageChanged();
         }
 
-        // ---- stage / visuals ---------------------------------------------
+        // Backward-compatible calls from the old BarracksZone component.
+        public void BeginSoldierTraining() => _role = CreatureRole.BarracksTrainee;
+        public void CompleteSoldierTraining() => CompleteFacilitySoldierTraining();
+
+        public void Infect()
+        {
+            if (_infected) return;
+            _infected = true;
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastInfected);
+        }
+
+        public void Cure() => _infected = false;
+        public void HealCombat(float amount)
+        {
+            if (IsSoldier) _combatHealth = Mathf.Min(_cfg.soldierMaxHealth, _combatHealth + amount);
+        }
+
+        public void TakeCombatDamage(float amount, Vector2 fromDirection)
+        {
+            if (!IsSoldier) return;
+            _combatHealth -= amount;
+            _hitTimer = .22f;
+            _knockbackDir = fromDirection.sqrMagnitude > .01f ? -fromDirection.normalized : Vector2.left;
+            if (_combatHealth <= 0f) Die();
+        }
+
+        public void PlayAttack() { if (IsSoldier) _attackTimer = .28f; }
+        public void PlayHit() { _hitTimer = .22f; _knockbackDir = -_wanderDir; }
+
         private void EnterStage(CreatureStage stage, bool initial = false)
         {
             _stage = stage;
-            _layTimer = 0f;
-            _sr.sprite = stage == CreatureStage.Infant ? _infantSprite
-                       : stage == CreatureStage.Adult ? _adultSprite
-                       : _elderSprite;
-            if (!initial && _sim != null) _sim.NotifyStageChanged();
+            RefreshBaseSprite();
+            if (!initial) _sim?.NotifyStageChanged();
+        }
+
+        private void RefreshBaseSprite()
+        {
+            if (_role == CreatureRole.FactoryWorker) _sr.sprite = WorkerSprite ?? _adultSprite;
+            else if (IsSoldier) _sr.sprite = SoldierSprite ?? _adultSprite;
+            else if (_stage == CreatureStage.Infant) _sr.sprite = InfantSprite ?? _infantSprite;
+            else if (_stage == CreatureStage.Elder) _sr.sprite = ElderSprite ?? _elderSprite;
+            else _sr.sprite = AdultSprite ?? _adultSprite;
         }
 
         private void UpdateVisuals()
         {
-            float target = _stage == CreatureStage.Infant ? _cfg.infantScale
-                          : _stage == CreatureStage.Adult ? _cfg.primeScale
-                          : _cfg.elderScale;
+            float scale = _stage == CreatureStage.Infant ? _cfg.infantScale
+                : _stage == CreatureStage.Elder ? _cfg.elderScale
+                : IsSoldier ? _cfg.primeScale * 1.08f : _cfg.primeScale;
+            float bob = Mathf.Sin(Time.time * 9f + _wobblePhase) * .035f;
+            transform.localScale = new Vector3(scale * (1f + bob), scale * (1f - bob), 1f);
+            transform.localRotation = Quaternion.Euler(0, 0, _hitTimer > 0f ? Mathf.Sin(Time.time * 70f) * 5f : 0f);
 
-            // A busy worker bounces a little quicker to read as "doing something".
-            float rate = IsWorking ? 9f : 6f;
-            float bob = Mathf.Sin(Time.time * rate + _wobblePhase) * 0.05f;
-            transform.localScale = new Vector3(target * (1f - bob), target * (1f + bob), 1f);
+            if (IsSoldier && _attackTimer > 0f && SoldierAttackFrames.Length > 0)
+            {
+                int index = Mathf.Clamp(Mathf.FloorToInt((1f - _attackTimer / _cfg.attackInterval) * SoldierAttackFrames.Length), 0, SoldierAttackFrames.Length - 1);
+                _sr.sprite = SoldierAttackFrames[index];
+            }
+            else if (_role == CreatureRole.Free && _stage == CreatureStage.Adult && AdultWalkFrames.Length > 0)
+                _sr.sprite = AdultWalkFrames[Mathf.FloorToInt(Time.time * 8f) % AdultWalkFrames.Length];
+            else if (_hitTimer <= 0f) RefreshBaseSprite();
+
+            Color baseColor = _infected ? new Color(.76f, .55f, .9f, 1f) : Color.white;
+            _sr.color = _hitTimer > 0f ? new Color(1f, .3f, .25f, 1f) : baseColor;
+        }
+
+        private static Sprite LoadSingle(ref Sprite cache, string path, float worldWidth)
+        {
+            if (cache != null) return cache;
+            var texture = Resources.Load<Texture2D>(path);
+            if (texture == null) return null;
+            texture.filterMode = FilterMode.Point;
+            cache = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f), texture.width / worldWidth);
+            return cache;
+        }
+
+        private static Sprite InfantSprite => LoadSingle(ref _infant, "Art/bug_infant", .75f);
+        private static Sprite WorkerSprite => LoadSingle(ref _worker, "Art/bug_worker", 1f);
+        private static Sprite ElderSprite => LoadSingle(ref _elder, "Art/ColonyV2/bug_elder_v2", 1.15f);
+        private static Sprite SoldierSprite => LoadSingle(ref _soldier, "Art/bug_soldier", 1.15f);
+        private static Sprite AdultSprite => AdultWalkFrames.Length > 0 ? AdultWalkFrames[0] : _adult;
+
+        private static Sprite[] AdultWalkFrames => _adultWalk ?? (_adultWalk = LoadSheet("Art/bug_adult_walk", 4, 1f));
+        private static Sprite[] SoldierAttackFrames => _soldierAttack ?? (_soldierAttack = LoadSheet("Art/bug_soldier_attack", 4, 1.15f));
+
+        private static Sprite[] LoadSheet(string path, int count, float worldWidth)
+        {
+            var texture = Resources.Load<Texture2D>(path);
+            if (texture == null) return new Sprite[0];
+            texture.filterMode = FilterMode.Point;
+            int width = texture.width / count;
+            var frames = new Sprite[count];
+            for (int i = 0; i < count; i++)
+                frames[i] = Sprite.Create(texture, new Rect(i * width, 0, width, texture.height), new Vector2(.5f, .5f), width / worldWidth);
+            return frames;
         }
 
         private void Die()
         {
-            if (_working && _sim != null && _sim.Labor != null) _sim.Labor.Unpark(this);
+            if (_stage == CreatureStage.Elder || IsSoldier) _sim?.SpawnContamination(transform.position);
             GameEvents.RaiseCreatureDied(transform.position);
-            if (_sim != null) _sim.RemoveCreature(this);
+            _sim?.RemoveCreature(this);
             Destroy(gameObject);
         }
     }

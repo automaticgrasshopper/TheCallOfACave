@@ -18,21 +18,32 @@ namespace TCC.Managers
         private int _money;
         private int _infants;
         private int _adults;
+        private int _food;
 
         private void OnEnable()
         {
             GameEvents.MoneyChanged += OnMoneyChanged;
+            GameEvents.FoodChanged += OnFoodChanged;
             GameEvents.PopulationChanged += OnPopulationChanged;
             GameEvents.LanguageChanged += OnLanguageChanged;
             GameEvents.GameStateChanged += OnGameStateChanged;
+            GameEvents.EggLaid += OnEggLaid;
+            GameEvents.EggCollected += OnEggCollected;
+            GameEvents.CreatureBorn += OnCreatureBorn;
+            GameEvents.CreatureDied += OnCreatureDied;
         }
 
         private void OnDisable()
         {
             GameEvents.MoneyChanged -= OnMoneyChanged;
+            GameEvents.FoodChanged -= OnFoodChanged;
             GameEvents.PopulationChanged -= OnPopulationChanged;
             GameEvents.LanguageChanged -= OnLanguageChanged;
             GameEvents.GameStateChanged -= OnGameStateChanged;
+            GameEvents.EggLaid -= OnEggLaid;
+            GameEvents.EggCollected -= OnEggCollected;
+            GameEvents.CreatureBorn -= OnCreatureBorn;
+            GameEvents.CreatureDied -= OnCreatureDied;
         }
 
         private void Start()
@@ -42,9 +53,14 @@ namespace TCC.Managers
                 _hud.BindLanguageButton(OnLanguagePressed);
                 _hud.BindPauseButton(OnPausePressed);
                 _hud.BindBuyButton(OnBuyPressed);
+                _hud.BindBuyFoodButton(OnBuyFoodPressed);
             }
+            if (_hud != null && GameManager.Exists)
+                ApplyGameState(GameManager.Instance.State);
             RefreshDynamicLabels();
         }
+
+        private void OnFoodChanged(int food) { _food = food; RefreshDynamicLabels(); }
 
         private void OnMoneyChanged(int money)
         {
@@ -63,8 +79,25 @@ namespace TCC.Managers
 
         private void OnGameStateChanged(GameState state)
         {
-            if (_hud != null) _hud.SetPaused(state == GameState.Paused);
+            ApplyGameState(state);
         }
+
+        private void ApplyGameState(GameState state)
+        {
+            if (_hud == null) return;
+            _hud.SetVisible(state == GameState.Playing || state == GameState.Paused);
+            _hud.SetPaused(state == GameState.Paused);
+        }
+
+        private void OnEggLaid(Vector2 _) => ToastView.Instance?.Key(LocalizationTable.Keys.ToastEggLaid);
+        private void OnEggCollected(int value, Vector2 _)
+        {
+            if (!ToastView.Exists || !LocalizationManager.Exists) return;
+            ToastView.Instance.Message(string.Format(
+                LocalizationManager.Instance.Get(LocalizationTable.Keys.ToastEggSold), value));
+        }
+        private void OnCreatureBorn(Vector2 _) => ToastView.Instance?.Key(LocalizationTable.Keys.ToastBugBorn);
+        private void OnCreatureDied(Vector2 _) => ToastView.Instance?.Key(LocalizationTable.Keys.ToastBugDied);
 
         private void RefreshDynamicLabels()
         {
@@ -72,6 +105,7 @@ namespace TCC.Managers
             var loc = LocalizationManager.Instance;
             _hud.SetMoney(string.Format(loc.Get(LocalizationTable.Keys.Money), _money));
             _hud.SetPopulation(string.Format(loc.Get(LocalizationTable.Keys.Population), _infants, _adults));
+            _hud.SetFood(string.Format(loc.Get(LocalizationTable.Keys.Food), _food));
         }
 
         private void OnLanguagePressed()
@@ -90,6 +124,12 @@ namespace TCC.Managers
         {
             if (AudioManager.Exists) AudioManager.Instance.PlaySfx(AudioLibrary.Ids.Click);
             if (SimulationManager.Exists) SimulationManager.Instance.TryBuyJuvenile();
+        }
+
+        private void OnBuyFoodPressed()
+        {
+            if (AudioManager.Exists) AudioManager.Instance.PlaySfx(AudioLibrary.Ids.Click);
+            if (EconomyManager.Exists) EconomyManager.Instance.TryBuyFood();
         }
     }
 }

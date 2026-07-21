@@ -16,20 +16,25 @@ namespace TCC.Data
         [Tooltip("How often a wandering bug picks a new drift direction.")]
         public float wanderChangeInterval = 2.4f;
 
-        [Header("Lifespan (seconds) & stage split")]
-        [Tooltip("Total life is rolled uniformly in this range on birth.")]
-        public float lifespanMin = 160f;
-        public float lifespanMax = 200f;
-        [Tooltip("Fraction of the whole life spent as a juvenile.")]
-        [Range(0f, 1f)] public float juvenileFraction = 0.2f;
-        [Tooltip("Fraction spent as a prime adult. Elder gets the remainder.")]
-        [Range(0f, 1f)] public float primeFraction = 0.6f;
+        [Header("Life and health")]
+        public float totalLifespanSeconds = 360f;
+        public float juvenileSeconds = 60f;
+        public float elderStartSeconds = 300f;
+        public float healthMax = 100f;
+        public float healthLossInterval = 5f;
+        public float healthLossPerTick = 1f;
+        public float foodHealing = 35f;
+        public float criticalHealth = 20f;
+        public float criticalAgeMultiplier = 2f;
+        public float infectedHealthMultiplier = 2f;
+        public float infectedAgeMultiplier = 2f;
 
         [Header("Breeding")]
         [Tooltip("A prime adult lays one egg every this many seconds.")]
-        public float eggLayIntervalSeconds = 20f;
+        public float eggLayIntervalSeconds = 120f;
+        public float firstEggMinSeconds = 70f;
         [Tooltip("An unsold egg hatches into a juvenile after this long.")]
-        public float eggHatchSeconds = 15f;
+        public float eggHatchSeconds = 30f;
         [Tooltip("Cap on eggs on screen.")]
         public int maxEggs = 30;
         [Tooltip("Cap on live creatures.")]
@@ -42,6 +47,29 @@ namespace TCC.Data
 
         [Header("Initial population")]
         public int startInfants = 3;
-        public int startAdults = 3;
+        public int startAdults = 0;
+        public int startEggs = 2;
+
+        [Header("Soldier training")]
+        [Tooltip("Training represents two colony-years in the prototype time scale.")]
+        public float soldierTrainingSeconds = 20f;
+        [Tooltip("A completed soldier has this fraction of its pre-training remaining life.")]
+        [Range(0.1f, 1f)] public float soldierRemainingLifeMultiplier = 0.5f;
+
+        [Header("Facilities and production")]
+        public float factoryPartInterval = 10f;
+        public int factoryPartValue = 200;
+        public float hospitalTreatmentSeconds = 10f;
+        public float academyTrainingSeconds = 20f;
+        public float contaminationCleanSeconds = 2f;
+
+        [Header("Combat")]
+        public float firstInvasionSeconds = 180f;
+        public float soldierMaxHealth = 100f;
+        public float enemyMaxHealth = 110f;
+        public float soldierDamage = 10f;
+        public float enemyDamage = 11f;
+        public float attackInterval = 1f;
+        public float combatAgeMultiplier = 1.5f;
     }
 }

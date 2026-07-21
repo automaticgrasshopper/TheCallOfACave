@@ -48,6 +48,7 @@ crashlytics-build.properties
 
 # OS / IDE
 .vs/
+.vscode/
 .idea/
 .DS_Store
 Thumbs.db

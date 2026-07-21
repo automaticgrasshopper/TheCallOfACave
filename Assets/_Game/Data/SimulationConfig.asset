@@ -14,16 +14,39 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   moveSpeed: 0.9
   wanderChangeInterval: 2.4
-  lifespanMin: 160
-  lifespanMax: 200
-  juvenileFraction: 0.2
-  primeFraction: 0.6
-  eggLayIntervalSeconds: 20
-  eggHatchSeconds: 15
+  totalLifespanSeconds: 360
+  juvenileSeconds: 60
+  elderStartSeconds: 300
+  healthMax: 100
+  healthLossInterval: 5
+  healthLossPerTick: 1
+  foodHealing: 35
+  criticalHealth: 20
+  criticalAgeMultiplier: 2
+  infectedHealthMultiplier: 2
+  infectedAgeMultiplier: 2
+  eggLayIntervalSeconds: 120
+  firstEggMinSeconds: 70
+  eggHatchSeconds: 30
   maxEggs: 30
   maxCreatures: 40
   infantScale: 0.52
   primeScale: 0.68
   elderScale: 0.62
   startInfants: 3
-  startAdults: 3
+  startAdults: 0
+  startEggs: 2
+  soldierTrainingSeconds: 20
+  soldierRemainingLifeMultiplier: 0.5
+  factoryPartInterval: 10
+  factoryPartValue: 200
+  hospitalTreatmentSeconds: 10
+  academyTrainingSeconds: 20
+  contaminationCleanSeconds: 2
+  firstInvasionSeconds: 180
+  soldierMaxHealth: 100
+  enemyMaxHealth: 110
+  soldierDamage: 10
+  enemyDamage: 11
+  attackInterval: 1
+  combatAgeMultiplier: 1.5

@@ -6,10 +6,8 @@ using TCC.Managers;
 namespace TCC.Gameplay
 {
     /// <summary>
-    /// The core economic fork made physical: leave it alone and it hatches into a
-    /// new juvenile, or click it to cash out for coins. It raises
-    /// <see cref="GameEvents.EggCollected"/> on click and lets the economy decide
-    /// the coin value.
+    /// A colony egg. Eggs are population growth, not currency: they hatch after
+    /// the configured incubation time and cannot be sold by clicking.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public class Egg : MonoBehaviour
@@ -20,14 +18,38 @@ namespace TCC.Gameplay
         private float _phase;
         private Vector3 _baseScale;
         private bool _consumed;
+        private static Sprite _pixelEggSprite;
+        private static bool _pixelEggLoaded;
 
         public void Init(SimulationManager sim, SimulationConfig cfg)
         {
             _sim = sim;
             _cfg = cfg;
+            if (PixelEggSprite != null)
+            {
+                var renderer = GetComponent<SpriteRenderer>();
+                renderer.sprite = PixelEggSprite;
+            }
             _hatch = cfg.eggHatchSeconds;
             _phase = Random.value * Mathf.PI * 2f;
             _baseScale = transform.localScale;
+        }
+
+        private static Sprite PixelEggSprite
+        {
+            get
+            {
+                if (_pixelEggLoaded) return _pixelEggSprite;
+                _pixelEggLoaded = true;
+                var texture = Resources.Load<Texture2D>("Art/egg_pixel");
+                if (texture != null)
+                {
+                    texture.filterMode = FilterMode.Point;
+                    _pixelEggSprite = Sprite.Create(texture,
+                        new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f), texture.width / .65f);
+                }
+                return _pixelEggSprite;
+            }
         }
 
         private void Update()
@@ -41,17 +63,6 @@ namespace TCC.Gameplay
 
             _hatch -= Time.deltaTime;
             if (_hatch <= 0f) Hatch();
-        }
-
-        private void OnMouseDown()
-        {
-            if (_consumed) return;
-            if (GameManager.Exists && GameManager.Instance.State != GameState.Playing) return;
-            _consumed = true;
-            int value = EconomyManager.Exists ? EconomyManager.Instance.EggSellValue : 0;
-            GameEvents.RaiseEggCollected(value, transform.position);
-            if (_sim != null) _sim.RemoveEgg(this);
-            Destroy(gameObject);
         }
 
         private void Hatch()

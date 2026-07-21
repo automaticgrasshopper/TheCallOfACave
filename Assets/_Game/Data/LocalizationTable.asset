@@ -22,12 +22,18 @@ MonoBehaviour:
   - key: hud.population
     zh: '幼体 {0} · 成体 {1}'
     en: 'Young {0} · Adult {1}'
+  - key: hud.food
+    zh: '食物：{0}'
+    en: 'Food: {0}'
   - key: btn.buy_food
     zh: '投喂'
     en: 'Feed'
   - key: hud.buy
     zh: '购买幼体 120'
     en: 'Buy Bug 120'
+  - key: hud.buy_food
+    zh: '购买食物 50'
+    en: 'Buy Food 50'
   - key: btn.language
     zh: 'EN'
     en: '中文'
@@ -43,6 +49,99 @@ MonoBehaviour:
   - key: state.gameover
     zh: '全灭了…'
     en: 'All gone...'
+  - key: gameover.title
+    zh: '虫群失联'
+    en: 'COLONY LOST'
+  - key: gameover.body
+    zh: '最后一只洞穴虫已消失在污染与黑暗中。重建巢群，再次回应洞穴的召唤。'
+    en: 'The last cave bug vanished into pollution and darkness. Rebuild the colony and answer the cave again.'
+  - key: gameover.restart
+    zh: '重建巢群'
+    en: 'REBUILD COLONY'
+  - key: gameover.menu
+    zh: '返回标题'
+    en: 'RETURN TO TITLE'
+  - key: toast.egg_laid
+    zh: '自由成虫产下了一枚虫卵'
+    en: 'A free adult has laid an egg'
+  - key: toast.egg_sold
+    zh: '虫卵已回收：+{0} 金币'
+    en: 'Egg reclaimed: +{0} coins'
+  - key: toast.bug_born
+    zh: '新的幼体破壳而出'
+    en: 'A young bug has hatched'
+  - key: toast.bug_died
+    zh: '一只洞穴虫回归沙海'
+    en: 'A cave bug returns to the sands'
+  - key: toast.bug_bought
+    zh: '幼体已送入育巢'
+    en: 'A young bug enters the nursery'
+  - key: toast.insufficient_funds
+    zh: '金币不足，无法引入幼体'
+    en: 'Not enough coins to bring in a young bug'
+  - key: toast.food_bought
+    zh: '食物已入库'
+    en: 'Food added to storage'
+  - key: toast.food_used
+    zh: '已投喂，健康正在恢复'
+    en: 'Fed: health restored'
+  - key: toast.no_food
+    zh: '食物不足'
+    en: 'Not enough food'
+  - key: toast.built
+    zh: '设施建造完成'
+    en: 'Facility constructed'
+  - key: toast.upgraded
+    zh: '设施升级完成'
+    en: 'Facility upgraded'
+  - key: toast.facility_full
+    zh: '设施容量已满'
+    en: 'Facility is at capacity'
+  - key: toast.adult_only
+    zh: '只有自由成虫可以进入'
+    en: 'Only a free adult can enter'
+  - key: toast.part_ready
+    zh: '工厂产出金属零件，点击回收'
+    en: 'Metal part produced; click to collect'
+  - key: toast.infected
+    zh: '虫体受到污染，生命流逝加速'
+    en: 'Bug infected; health and aging accelerated'
+  - key: toast.cured
+    zh: '感染已治愈，请将虫子带离医院'
+    en: 'Infection cured; remove the bug from hospital'
+  - key: toast.invasion
+    zh: '右侧侦测到机械入侵者'
+    en: 'Mechanical intruder detected on the right'
+  - key: toast.doctor_started
+    zh: '医学博士培养开始'
+    en: 'Medical doctor training started'
+  - key: toast.doctor_ready
+    zh: '医学博士培养完成'
+    en: 'Medical doctors are ready'
+  - key: toast.need_academy_worker
+    zh: '医学院需要一名自由成虫；每名博士消耗300金币和5份食物'
+    en: 'Academy needs one free adult; each doctor costs 300 coins and 5 food'
+  - key: zone.nursery
+    zh: '育巢 · 孵化区'
+    en: 'NURSERY · HATCHERY'
+  - key: zone.factory
+    zh: '工厂 · 劳作区'
+    en: 'EXTRACTOR · WORK ZONE'
+  - key: zone.barracks
+    zh: '兵营 · 工兵训练'
+    en: 'BARRACKS · SOLDIER TRAINING'
+  - key: zone.hospital
+    zh: '医院 · 治疗区'
+    en: 'HOSPITAL · TREATMENT'
+  - key: zone.academy
+    zh: '医学院 · 博士培养'
+    en: 'MEDICAL ACADEMY · DOCTOR TRAINING'
+  - key: toast.training_started
+    zh: '工兵训练开始：消耗两年寿命'
+    en: 'Soldier training begins: two colony-years committed'
+  - key: toast.soldier_ready
+    zh: '工兵训练完成，剩余寿命减半'
+    en: 'Soldier ready; remaining life is halved'
   - key: menu.start
     zh: '开始游戏'
     en: 'Start Game'

@@ -57,13 +57,50 @@ namespace TCC.Data
             public const string GameTitle = "game.title";
             public const string Money = "hud.money";
             public const string Population = "hud.population";
+            public const string Food = "hud.food";
             public const string BuyFood = "btn.buy_food";
             public const string HudBuy = "hud.buy";
+            public const string HudBuyFood = "hud.buy_food";
             public const string LanguageToggle = "btn.language";
             public const string Pause = "btn.pause";
             public const string Resume = "btn.resume";
             public const string HintFeed = "hint.feed";
             public const string GameOver = "state.gameover";
+            public const string GameOverTitle = "gameover.title";
+            public const string GameOverBody = "gameover.body";
+            public const string GameOverRestart = "gameover.restart";
+            public const string GameOverMenu = "gameover.menu";
+
+            // Live status notifications
+            public const string ToastEggLaid = "toast.egg_laid";
+            public const string ToastEggSold = "toast.egg_sold";
+            public const string ToastBugBorn = "toast.bug_born";
+            public const string ToastBugDied = "toast.bug_died";
+            public const string ToastBugBought = "toast.bug_bought";
+            public const string ToastInsufficientFunds = "toast.insufficient_funds";
+            public const string ToastFoodBought = "toast.food_bought";
+            public const string ToastFoodUsed = "toast.food_used";
+            public const string ToastNoFood = "toast.no_food";
+            public const string ToastBuilt = "toast.built";
+            public const string ToastUpgraded = "toast.upgraded";
+            public const string ToastFacilityFull = "toast.facility_full";
+            public const string ToastAdultOnly = "toast.adult_only";
+            public const string ToastPartReady = "toast.part_ready";
+            public const string ToastInfected = "toast.infected";
+            public const string ToastCured = "toast.cured";
+            public const string ToastInvasion = "toast.invasion";
+            public const string ToastDoctorStarted = "toast.doctor_started";
+            public const string ToastDoctorReady = "toast.doctor_ready";
+            public const string ToastNeedAcademyWorker = "toast.need_academy_worker";
+
+            // World-space site labels
+            public const string ZoneNursery = "zone.nursery";
+            public const string ZoneFactory = "zone.factory";
+            public const string ZoneBarracks = "zone.barracks";
+            public const string ZoneHospital = "zone.hospital";
+            public const string ZoneAcademy = "zone.academy";
+            public const string ToastTrainingStarted = "toast.training_started";
+            public const string ToastSoldierReady = "toast.soldier_ready";
 
             // Menu
             public const string MenuStart = "menu.start";

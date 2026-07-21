@@ -15,8 +15,11 @@ namespace TCC.Managers
         [SerializeField] private EconomyConfig _config;
 
         public int Money { get; private set; }
+        public int Food { get; private set; }
         public int EggSellValue => _config != null ? _config.eggSellValue : 0;
         public int BuyJuvenileCost => _config != null ? _config.buyJuvenileCost : 0;
+        public int BuyFoodCost => _config != null ? _config.buyFoodCost : 0;
+        public EconomyConfig Config => _config;
 
         private float _passiveTimer;
 
@@ -43,6 +46,7 @@ namespace TCC.Managers
         {
             // Broadcast the opening balance once every listener (UI) is subscribed.
             GameEvents.RaiseMoneyChanged(Money);
+            GameEvents.RaiseFoodChanged(Food);
         }
 
         private void Update()
@@ -59,6 +63,36 @@ namespace TCC.Managers
         }
 
         public bool CanAfford(int amount) => Money >= amount;
+
+        public void TryBuyFood()
+        {
+            Spend(_config != null ? _config.buyFoodCost : 0, ok =>
+            {
+                if (!ok) { TCC.UI.ToastView.Instance?.Key(LocalizationTable.Keys.ToastInsufficientFunds); return; }
+                Food++;
+                GameEvents.RaiseFoodChanged(Food);
+                TCC.UI.ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodBought);
+            });
+        }
+
+        public bool TryConsumeFood(int amount)
+        {
+            if (amount <= 0) return true;
+            if (Food < amount) return false;
+            Food -= amount;
+            GameEvents.RaiseFoodChanged(Food);
+            return true;
+        }
+
+        public bool TrySpend(int coins)
+        {
+            if (coins < 0 || Money < coins) return false;
+            Money -= coins;
+            GameEvents.RaiseMoneyChanged(Money);
+            return true;
+        }
+
+        private void Spend(int amount, System.Action<bool> result) => OnSpendRequested(amount, result);
 
         private void Add(int amount)
         {
