@@ -38,16 +38,25 @@ MonoBehaviour:
   startEggs: 2
   soldierTrainingSeconds: 10
   soldierRemainingLifeMultiplier: 0.5
-  factoryPartInterval: 8
-  factoryPartValue: 80
+  factoryLevel1Interval: 8
+  factoryLevel2Interval: 7
+  factoryLevel3Interval: 12
+  factoryLevel1SaleValue: 80
+  factoryLevel2SaleValue: 130
+  factoryLevel3SaleValue: 240
   hospitalTreatmentSeconds: 5
   hospitalCombatHealPerSecond: 8
   academyTrainingSeconds: 10
   contaminationCleanSeconds: 1
   firstInvasionSeconds: 90
+  invasionWaveInterval: 45
+  heavyEnemyStartSeconds: 300
   soldierMaxHealth: 100
   enemyMaxHealth: 110
+  heavyEnemyMaxHealth: 330
   soldierDamage: 10
   enemyDamage: 11
+  heavyEnemyDamage: 22
   attackInterval: 0.75
   combatAgeMultiplier: 1.5
+  eliteSoldierMultiplier: 2

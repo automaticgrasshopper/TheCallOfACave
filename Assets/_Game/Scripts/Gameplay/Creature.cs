@@ -38,6 +38,7 @@ namespace TCC.Gameplay
         private float _hitTimer;
         private Vector2 _knockbackDir;
         private float _wobblePhase;
+        private bool _eliteSoldier;
 
         private static Sprite _infant, _adult, _worker, _elder, _soldier;
         private static Sprite[] _adultWalk, _soldierAttack;
@@ -45,6 +46,7 @@ namespace TCC.Gameplay
         public CreatureStage Stage => _stage;
         public CreatureRole Role => _role;
         public bool IsSoldier => _role == CreatureRole.Soldier;
+        public bool IsEliteSoldier => IsSoldier && _eliteSoldier;
         public bool IsFreeAdult => _stage == CreatureStage.Adult && _role == CreatureRole.Free;
         public bool IsWorking => _role == CreatureRole.FactoryWorker;
         public bool IsTraining => _role == CreatureRole.BarracksTrainee;
@@ -110,7 +112,7 @@ namespace TCC.Gameplay
             }
             _attackTimer = Mathf.Max(0f, _attackTimer - dt);
             UpdateVisuals();
-            _bars.Set(Health01, _age / _lifespan, IsSoldier ? _combatHealth / _cfg.soldierMaxHealth : -1f);
+            _bars.Set(Health01, _age / _lifespan, IsSoldier ? _combatHealth / SoldierMaxHealth : -1f);
         }
 
         private CreatureStage StageForAge(float value)
@@ -146,7 +148,7 @@ namespace TCC.Gameplay
             else if (_attackTimer <= 0f)
             {
                 _attackTimer = _cfg.attackInterval;
-                enemy.TakeDamage(_cfg.soldierDamage);
+                enemy.TakeDamage(_cfg.soldierDamage * (IsEliteSoldier ? _cfg.eliteSoldierMultiplier : 1f));
             }
             return true;
         }
@@ -218,6 +220,32 @@ namespace TCC.Gameplay
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodUsed);
         }
 
+        public bool ReceiveInventoryFood()
+        {
+            if (_health >= _cfg.healthMax) return false;
+            _health = Mathf.Min(_cfg.healthMax, _health + _cfg.foodHealing);
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodUsed);
+            return true;
+        }
+
+        public bool TryEquipElite()
+        {
+            if (!IsSoldier || _eliteSoldier)
+            {
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastEliteRequired);
+                return false;
+            }
+            float oldMax = SoldierMaxHealth;
+            _eliteSoldier = true;
+            _combatHealth = Mathf.Min(SoldierMaxHealth,
+                _combatHealth + (SoldierMaxHealth - oldMax));
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastEliteEquipped);
+            return true;
+        }
+
+        private float SoldierMaxHealth => _cfg.soldierMaxHealth *
+            (IsEliteSoldier ? _cfg.eliteSoldierMultiplier : 1f);
+
         public void AssignTo(ColonyFacility facility, CreatureRole role)
         {
             if (role == CreatureRole.HospitalPatient) _roleBeforeHospital = _role;
@@ -261,7 +289,7 @@ namespace TCC.Gameplay
         public void Cure() => _infected = false;
         public void HealCombat(float amount)
         {
-            if (IsSoldier) _combatHealth = Mathf.Min(_cfg.soldierMaxHealth, _combatHealth + amount);
+            if (IsSoldier) _combatHealth = Mathf.Min(SoldierMaxHealth, _combatHealth + amount);
         }
 
         public void TakeCombatDamage(float amount, Vector2 fromDirection)
@@ -310,7 +338,8 @@ namespace TCC.Gameplay
                 _sr.sprite = AdultWalkFrames[Mathf.FloorToInt(Time.time * 8f) % AdultWalkFrames.Length];
             else if (_hitTimer <= 0f) RefreshBaseSprite();
 
-            Color baseColor = _infected ? new Color(.76f, .55f, .9f, 1f) : Color.white;
+            Color baseColor = _infected ? new Color(.76f, .55f, .9f, 1f)
+                : IsEliteSoldier ? new Color(1f, .84f, .42f, 1f) : Color.white;
             _sr.color = _hitTimer > 0f ? new Color(1f, .3f, .25f, 1f) : baseColor;
         }
 

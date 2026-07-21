@@ -17,6 +17,7 @@ namespace TCC.Managers
         [SerializeField] private MetalPart _metalPartPrefab;
         [SerializeField] private ContaminationSource _contaminationPrefab;
         [SerializeField] private EnemyRobot _enemyPrefab;
+        [SerializeField] private EnemyRobot _heavyEnemyPrefab;
         [SerializeField] private MedicalDoctor _doctorPrefab;
         [Header("Scene refs")]
         [SerializeField] private Transform _worldRoot;
@@ -36,7 +37,7 @@ namespace TCC.Managers
         private readonly List<MedicalDoctor> _doctors = new List<MedicalDoctor>(16);
         private ColonyFacility[] _facilities;
         private float _invasionTimer;
-        private bool _invasionStarted;
+        private int _waveIndex;
 
         public SimulationConfig Config => _config;
         public LaborZone Labor => _labor;
@@ -57,12 +58,11 @@ namespace TCC.Managers
 
         private void Update()
         {
-            if (_invasionStarted || _config == null) return;
+            if (_config == null) return;
             _invasionTimer += Time.deltaTime;
-            if (_invasionTimer < _config.firstInvasionSeconds) return;
-            _invasionStarted = true;
-            SpawnEnemy(new Vector2(8.2f, Random.Range(-2.8f, 2.8f)));
-            ToastView.Instance?.Key(LocalizationTable.Keys.ToastInvasion);
+            float nextWave = _config.firstInvasionSeconds + _waveIndex * _config.invasionWaveInterval;
+            if (_invasionTimer < nextWave) return;
+            SpawnWave();
         }
 
         public Vector2 ClampToActivity(Vector2 point, float margin = .3f)
@@ -144,13 +144,14 @@ namespace TCC.Managers
             return ClampWorld(point);
         }
 
-        public void SpawnMetalPart(Vector2 position)
+        public void StoreFactoryProduct(int factoryLevel)
         {
-            var part = _metalPartPrefab != null
-                ? Instantiate(_metalPartPrefab, position, Quaternion.identity, _worldRoot)
-                : CreateEntity<MetalPart>("Metal Part", "Art/metal_part", .55f, position);
-            part.Init(_config.factoryPartValue);
-            ToastView.Instance?.Key(LocalizationTable.Keys.ToastPartReady);
+            if (!InventoryManager.Exists) return;
+            var type = _config.FactoryItem(factoryLevel);
+            InventoryManager.Instance.Add(type);
+            ToastView.Instance?.Key(type == InventoryItemType.EliteEquipment
+                ? LocalizationTable.Keys.ToastEquipmentReady
+                : LocalizationTable.Keys.ToastPartReady);
         }
 
         public void SpawnContamination(Vector2 position)
@@ -170,11 +171,31 @@ namespace TCC.Managers
             _doctors.Add(doctor);
         }
 
-        private void SpawnEnemy(Vector2 position)
+        private void SpawnWave()
         {
-            var enemy = _enemyPrefab != null
-                ? Instantiate(_enemyPrefab, position, Quaternion.identity, _worldRoot)
-                : CreateEntity<EnemyRobot>("Scavenger Robot", "Art/ColonyV2/enemy_robot", 1.15f, position);
+            float elapsed = _invasionTimer;
+            int normalCount = Mathf.Min(5, 1 + _waveIndex / 2);
+            bool heavyWave = elapsed >= _config.heavyEnemyStartSeconds;
+            int heavyCount = heavyWave ? Mathf.Min(3, 1 + Mathf.FloorToInt(
+                (elapsed - _config.heavyEnemyStartSeconds) / 180f)) : 0;
+            for (int i = 0; i < normalCount; i++)
+                SpawnEnemy(new Vector2(8.2f + i * .24f, Random.Range(-3.5f, 3.5f)), false);
+            for (int i = 0; i < heavyCount; i++)
+                SpawnEnemy(new Vector2(8.45f + i * .45f, Random.Range(-2.8f, 2.8f)), true);
+            _waveIndex++;
+            ToastView.Instance?.Key(heavyWave
+                ? LocalizationTable.Keys.ToastHeavyInvasion
+                : LocalizationTable.Keys.ToastInvasion);
+        }
+
+        private void SpawnEnemy(Vector2 position, bool heavy)
+        {
+            var prefab = heavy ? _heavyEnemyPrefab : _enemyPrefab;
+            var enemy = prefab != null
+                ? Instantiate(prefab, position, Quaternion.identity, _worldRoot)
+                : CreateEntity<EnemyRobot>(heavy ? "Heavy Invader" : "Scavenger Robot",
+                    heavy ? "Art/Enemies/enemy_heavy" : "Art/ColonyV2/enemy_robot",
+                    heavy ? 3.45f : 1.15f, position);
             enemy.Init(this);
             _enemies.Add(enemy);
         }

@@ -18,12 +18,16 @@ One colony year equals **5 real-time seconds**. A normal bug lives for **36 colo
 | Health loss tick | 1 health / 2.5 s | 72 health lost over an untreated normal life. |
 | First egg delay | random 35–60 s after adulthood | Prevents synchronized population bursts. |
 | Later egg interval | 60 s | A free adult normally lays 1–2 eggs during adulthood. |
-| Factory production | 8 s per worker | Readable pickup cadence without flooding the map. |
+| Factory level 1 production | 8 s per worker | Produces stackable scrap for steady opening income. |
+| Factory level 2 production | 7 s per worker | Produces higher-value refined components. |
+| Factory level 3 production | 12 s per worker | Produces sellable/equippable elite exoskeletons. |
 | Soldier training | 10 s | Exactly two colony years. |
 | Hospital cure | 5 s | Infection remains dangerous but treatment fits the short loop. |
 | Academy training | 10 s | Doctor response can happen inside the same crisis. |
 | Pollution cleaning | 1 s | Doctor must reach the source; cleanup itself stays brisk. |
 | First invasion | 90 s from game start | Divides the lifecycle into setup and danger halves. |
+| Invasion wave interval | 45 s | Creates a repeated pressure cycle without interrupting every task. |
+| First heavy invader | First wave after 300 s (normally 315 s) | Keeps the first five minutes readable before escalation. |
 | Combat attack interval | 0.75 s | A normal robot fight resolves in roughly 7–9 seconds. |
 
 Additional fixed timing:
@@ -54,23 +58,26 @@ Time multipliers:
 
 ## Economy
 
-There is no passive income and eggs cannot be sold. Factory parts are the primary money source, so assigning adults to production sacrifices future eggs in exchange for economic growth.
+There is no passive income and eggs cannot be sold. Factory cargo is the primary money source, so assigning adults to production sacrifices future eggs in exchange for economic growth. Food and every factory product enter the backpack instead of appearing loose in the world.
 
 | Item or action | Cost / reward |
 | --- | ---: |
 | Buy juvenile | 100 coins |
 | Buy one food | 30 coins |
 | Feed one bug | 1 food; restores 35 health |
-| Collect one factory part | +80 coins |
+| Sell level 1 metal scrap | +80 coins |
+| Sell level 2 refined component | +130 coins |
+| Sell level 3 elite equipment | +240 coins, or equip one soldier |
 | Train one doctor | 150 coins + 3 food |
 
 ### Economy pacing target
 
 - Building the factory immediately leaves 200 coins.
 - The first 3 larvae mature at 30 seconds; the 2 opening eggs become adults at 45 seconds.
-- Two healthy factory workers operating from 30 to 90 seconds produce about 14 parts, worth roughly 1,120 coins.
+- Two healthy level-1 factory workers operating from 30 to 90 seconds produce about 14 scrap, worth roughly 1,120 coins.
 - That supports a barracks and hospital before the first invasion, or an academy-focused route, but does not fund every building and upgrade at once.
-- A single full-adult-stage factory worker can produce about 15 parts / 1,200 coins. The same free adult would instead lay roughly 1–2 eggs.
+- A single full-adult-stage level-1 worker can produce about 15 scrap / 1,200 coins. The same free adult would instead lay roughly 1–2 eggs.
+- Level 2 raises per-worker sale income from 10 to about 18.6 coins/second. Level 3 only raises it to 20 coins/second because its product also carries major combat utility.
 
 ## Bug Life, Health, and Roles
 
@@ -119,8 +126,10 @@ All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The aca
 | 2 | 5 | 350 |
 | 3 | 10 | 650 |
 
-- Healthy worker: one 80-coin part every 8 seconds.
-- Below 20 health: one part effectively every 16 seconds.
+- Level 1: one metal scrap every 8 seconds; click its backpack stack to sell for 80 coins.
+- Level 2: one refined component every 7 seconds; click its stack to sell for 130 coins.
+- Level 3: one elite exoskeleton every 12 seconds; click to sell for 240 coins or drag it onto a normal soldier.
+- Below 20 health: production speed is halved at every level.
 - Factory assignment is permanent and uses the dedicated worker appearance.
 
 ### Barracks
@@ -133,6 +142,7 @@ All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The aca
 
 - Training takes 10 seconds / two colony years.
 - Completion halves remaining lifespan and creates a soldier with 100 combat health.
+- A level-3 factory exoskeleton can upgrade a soldier once. The elite soldier has 200 combat health and 20 damage, visually marked with a gold/teal equipment tint.
 
 ### Hospital
 
@@ -160,11 +170,16 @@ All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The aca
 
 ## Invasion and Combat
 
-- The first scavenger robot enters from the right at 90 seconds.
+- The first scavenger robot enters from the right at 90 seconds; another wave arrives every 45 seconds.
+- Wave schedule begins with 1, 1, 2, 2, and 3 normal robots at 90 / 135 / 180 / 225 / 270 seconds.
+- Heavy enemies do not appear during the first five minutes. The 315-second wave contains 3 normal robots and 1 heavy invader.
+- Later waves rise toward 5 normal robots. Heavy count grows from 1 to a maximum of 3, adding one roughly every 180 seconds after heavy enemies unlock.
 - Soldier and robot attack interval: 0.75 seconds.
 - Soldier: 100 combat health, 10 damage.
 - Robot: 110 health, 11 damage.
 - One soldier may win but is likely to die; two soldiers reliably defeat one robot.
+- Elite soldier: 200 combat health, 20 damage. One elite soldier can narrowly defeat two normal robots if it begins at full health.
+- Heavy robot: 330 health, 22 damage, three times the normal enemy's visual size, and lower movement speed. It is intended for multiple soldiers or elite support.
 - A soldier ages ×1.5 while actively fighting.
 - Combat health reaching zero kills the soldier and produces pollution.
 
@@ -176,9 +191,30 @@ All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The aca
 - Drag adults into facilities.
 - Factory workers are locked in; hospital patients can be removed; trained soldiers are released from barracks.
 - Drag a soldier to the right side to deploy it for automatic combat.
-- Click metal parts to collect their value.
-- Click bugs to feed them.
+- The right-side backpack is a scrollable 3-column grid with a 3×3 visible window and 12 scene-authored slots.
+- Purchased food enters the backpack. Drag food onto a damaged bug to heal it; direct bug-click feeding remains as a convenience shortcut and consumes the same stored item.
+- Factory products enter their matching stack. Click scrap, components, or equipment to sell one item.
+- Drag elite equipment onto an unupgraded soldier to consume it and double that soldier's combat health and attack.
 - All player-facing text must exist in Chinese and English in `LocalizationTable`.
+
+## Session Length and Content Horizon
+
+The simulation has no fixed victory timer. Reproduction lets a well-managed colony continue across multiple three-minute generations, while waves keep escalating.
+
+- **0–90 seconds:** build order, first adults, first production and defense choice.
+- **90–300 seconds:** five normal-enemy waves, population replacement, facility upgrades and academy route.
+- **315 seconds onward:** heavy enemies make elite equipment and coordinated defense relevant.
+- **Current meaningful progression:** approximately 6–10 minutes for a first successful run to reach level-3 production and survive at least one heavy wave.
+- **Current content repetition point:** approximately 10–15 minutes. The colony can mechanically survive longer, but enemy silhouettes, equipment choices and strategic events begin repeating.
+
+Recommended next content material, in priority order:
+
+1. Equipped elite-soldier idle/walk/attack sprite sheet instead of tint-only differentiation.
+2. Normal enemy level 2 plus heavy enemy walk/attack/hit sheets.
+3. Three visual construction states for every facility and a short factory-output animation.
+4. Inventory hover cards, item descriptions, sell confirmation for rare gear, and drag feedback.
+5. A 10-minute boss/event and two alternate wave compositions to extend meaningful play toward 20 minutes.
+6. Combat, production, inventory, infection and alert sound sets.
 
 ## Failure State
 
@@ -186,8 +222,7 @@ When every living bug is dead, enter Game Over even if eggs, doctors, facilities
 
 ## Remaining Art Polish
 
-- Robot walk and attack sheet.
+- Elite soldier, normal robot and heavy robot animation sheets.
 - Doctor walk and cleaning sheet.
-- Metal-part pickup animation.
 - Three construction/upgrade variants per facility.
-- Food icon, infection overlay, hit sparks, and death dissolve.
+- Factory-output animation, infection overlay, hit sparks, and death dissolve.

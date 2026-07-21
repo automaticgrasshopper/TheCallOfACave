@@ -15,7 +15,8 @@ namespace TCC.Managers
         [SerializeField] private EconomyConfig _config;
 
         public int Money { get; private set; }
-        public int Food { get; private set; }
+        public int Food => InventoryManager.Exists
+            ? InventoryManager.Instance.Count(TCC.Gameplay.InventoryItemType.Food) : 0;
         public int BuyJuvenileCost => _config != null ? _config.buyJuvenileCost : 0;
         public int BuyFoodCost => _config != null ? _config.buyFoodCost : 0;
         public EconomyConfig Config => _config;
@@ -51,8 +52,8 @@ namespace TCC.Managers
             Spend(_config != null ? _config.buyFoodCost : 0, ok =>
             {
                 if (!ok) { TCC.UI.ToastView.Instance?.Key(LocalizationTable.Keys.ToastInsufficientFunds); return; }
-                Food++;
-                GameEvents.RaiseFoodChanged(Food);
+                if (InventoryManager.Exists)
+                    InventoryManager.Instance.Add(TCC.Gameplay.InventoryItemType.Food);
                 TCC.UI.ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodBought);
             });
         }
@@ -60,10 +61,8 @@ namespace TCC.Managers
         public bool TryConsumeFood(int amount)
         {
             if (amount <= 0) return true;
-            if (Food < amount) return false;
-            Food -= amount;
-            GameEvents.RaiseFoodChanged(Food);
-            return true;
+            return InventoryManager.Exists &&
+                InventoryManager.Instance.TryRemove(TCC.Gameplay.InventoryItemType.Food, amount);
         }
 
         public bool TrySpend(int coins)

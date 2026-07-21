@@ -178,10 +178,11 @@ namespace TCC.Gameplay
                 {
                     float efficiency = slot.creature.IsCritical ? .5f : 1f;
                     slot.timer += Time.deltaTime * efficiency;
-                    if (slot.timer >= cfg.factoryPartInterval)
+                    float interval = cfg.FactoryInterval(_level);
+                    if (slot.timer >= interval)
                     {
-                        slot.timer -= cfg.factoryPartInterval;
-                        SimulationManager.Instance.SpawnMetalPart(Center + new Vector2(_radius + .35f, Random.Range(-.7f, .7f)));
+                        slot.timer -= interval;
+                        SimulationManager.Instance.StoreFactoryProduct(_level);
                     }
                 }
                 else if (_type == FacilityType.Barracks)

@@ -10,13 +10,15 @@ namespace TCC.Gameplay
         private float _health;
         private float _attackTimer;
         private Creature _target;
+        [SerializeField] private bool _heavy;
         public Vector2 Position => transform.position;
         public bool Alive => _health > 0f;
+        public bool IsHeavy => _heavy;
 
         public void Init(SimulationManager sim)
         {
             _sim = sim;
-            _health = sim.Config.enemyMaxHealth;
+            _health = _heavy ? sim.Config.heavyEnemyMaxHealth : sim.Config.enemyMaxHealth;
         }
 
         private void Update()
@@ -27,7 +29,8 @@ namespace TCC.Gameplay
             Vector2 delta = destination - Position;
             if (delta.sqrMagnitude > .7f * .7f)
             {
-                transform.position = _sim.ClampWorld(Position + delta.normalized * .72f * Time.deltaTime);
+                float speed = _heavy ? .48f : .72f;
+                transform.position = _sim.ClampWorld(Position + delta.normalized * speed * Time.deltaTime);
                 GetComponent<SpriteRenderer>().flipX = delta.x < 0f;
             }
             else if (_target != null)
@@ -36,7 +39,8 @@ namespace TCC.Gameplay
                 if (_attackTimer <= 0f)
                 {
                     _attackTimer = _sim.Config.attackInterval;
-                    _target.TakeCombatDamage(_sim.Config.enemyDamage, delta.normalized);
+                    float damage = _heavy ? _sim.Config.heavyEnemyDamage : _sim.Config.enemyDamage;
+                    _target.TakeCombatDamage(damage, delta.normalized);
                 }
             }
         }

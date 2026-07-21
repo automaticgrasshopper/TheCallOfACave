@@ -61,6 +61,7 @@ namespace TCC.Data
             public const string BuyFood = "btn.buy_food";
             public const string HudBuy = "hud.buy";
             public const string HudBuyFood = "hud.buy_food";
+            public const string HudInventory = "hud.inventory";
             public const string LanguageToggle = "btn.language";
             public const string Pause = "btn.pause";
             public const string Resume = "btn.resume";
@@ -86,6 +87,12 @@ namespace TCC.Data
             public const string ToastFacilityFull = "toast.facility_full";
             public const string ToastAdultOnly = "toast.adult_only";
             public const string ToastPartReady = "toast.part_ready";
+            public const string ToastCargoSold = "toast.cargo_sold";
+            public const string ToastDragFood = "toast.drag_food";
+            public const string ToastEquipmentReady = "toast.equipment_ready";
+            public const string ToastEliteEquipped = "toast.elite_equipped";
+            public const string ToastEliteRequired = "toast.elite_required";
+            public const string ToastHeavyInvasion = "toast.heavy_invasion";
             public const string ToastInfected = "toast.infected";
             public const string ToastCured = "toast.cured";
             public const string ToastInvasion = "toast.invasion";

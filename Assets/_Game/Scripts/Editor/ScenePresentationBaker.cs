@@ -179,6 +179,125 @@ namespace TCC.EditorTools
 
             Set(hud, "_foodText", foodText);
             Set(hud, "_buyFoodButton", buyFood);
+            BakeInventory(card.parent);
+        }
+
+        private static void BakeInventory(Transform canvas)
+        {
+            if (canvas == null) return;
+            var economy = Object.FindObjectOfType<EconomyManager>(true);
+            if (economy != null) Component<InventoryManager>(economy.gameObject);
+
+            var panel = UIChild(canvas, "Cargo Backpack");
+            var panelRect = panel.GetComponent<RectTransform>() ?? panel.AddComponent<RectTransform>();
+            panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
+            panelRect.pivot = new Vector2(1f, 0f);
+            panelRect.anchoredPosition = new Vector2(-386f, 18f);
+            panelRect.sizeDelta = new Vector2(330f, 330f);
+            var panelImage = Component<UnityEngine.UI.Image>(panel);
+            panelImage.color = new Color(.018f, .028f, .032f, .96f);
+            PixelChrome.Apply(panel, new Color(.22f, .72f, .68f, 1f), new Color(.82f, .58f, .24f, 1f));
+
+            var titleGo = UIChild(panelRect, "Backpack Title");
+            var titleRect = titleGo.GetComponent<RectTransform>() ?? titleGo.AddComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0f, 1f); titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(.5f, 1f);
+            titleRect.anchoredPosition = new Vector2(0f, -10f);
+            titleRect.sizeDelta = new Vector2(-28f, 32f);
+            var title = Component<TextMeshProUGUI>(titleGo);
+            title.fontSize = 20f;
+            title.alignment = TextAlignmentOptions.Center;
+            title.color = new Color(.82f, .78f, .62f, 1f);
+            var loc = Object.FindObjectOfType<LocalizationManager>();
+            if (loc != null && loc.Font != null) title.font = loc.Font;
+            Component<LocalizedText>(titleGo).SetKey(LocalizationTable.Keys.HudInventory);
+
+            var viewport = UIChild(panelRect, "Viewport");
+            var viewportRect = viewport.GetComponent<RectTransform>() ?? viewport.AddComponent<RectTransform>();
+            viewportRect.anchorMin = Vector2.zero; viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = new Vector2(18f, 16f);
+            viewportRect.offsetMax = new Vector2(-18f, -48f);
+            var viewportImage = Component<UnityEngine.UI.Image>(viewport);
+            viewportImage.color = new Color(.01f, .016f, .018f, .82f);
+            Component<UnityEngine.UI.RectMask2D>(viewport);
+
+            var content = UIChild(viewportRect, "Grid Content");
+            var contentRect = content.GetComponent<RectTransform>() ?? content.AddComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0f, 1f); contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(.5f, 1f);
+            contentRect.anchoredPosition = Vector2.zero;
+            contentRect.sizeDelta = new Vector2(0f, 352f);
+            var grid = Component<UnityEngine.UI.GridLayoutGroup>(content);
+            grid.cellSize = new Vector2(86f, 78f);
+            grid.spacing = new Vector2(7f, 6f);
+            grid.padding = new RectOffset(7, 7, 7, 7);
+            grid.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 3;
+            grid.startAxis = UnityEngine.UI.GridLayoutGroup.Axis.Horizontal;
+
+            const int slotCount = 12;
+            for (int i = contentRect.childCount - 1; i >= 0; i--)
+            {
+                var child = contentRect.GetChild(i);
+                if (!child.name.StartsWith("Cargo Slot ")) continue;
+                if (int.TryParse(child.name.Substring("Cargo Slot ".Length), out int number) && number > slotCount)
+                    Object.DestroyImmediate(child.gameObject);
+            }
+            var slots = new InventorySlotView[slotCount];
+            for (int i = 0; i < slots.Length; i++)
+            {
+                var slotGo = UIChild(contentRect, $"Cargo Slot {i + 1:00}");
+                var slotRect = slotGo.GetComponent<RectTransform>() ?? slotGo.AddComponent<RectTransform>();
+                slotRect.sizeDelta = grid.cellSize;
+                var background = Component<UnityEngine.UI.Image>(slotGo);
+                background.color = new Color(.025f, .035f, .04f, .78f);
+                PixelChrome.Apply(slotGo, new Color(.18f, .34f, .34f, .82f), new Color(.52f, .39f, .2f, .9f));
+
+                var iconGo = UIChild(slotRect, "Icon");
+                var iconRect = iconGo.GetComponent<RectTransform>() ?? iconGo.AddComponent<RectTransform>();
+                iconRect.anchorMin = new Vector2(.5f, .5f); iconRect.anchorMax = new Vector2(.5f, .5f);
+                iconRect.pivot = new Vector2(.5f, .5f);
+                iconRect.sizeDelta = new Vector2(58f, 58f);
+                iconRect.anchoredPosition = new Vector2(0f, 2f);
+                var icon = Component<UnityEngine.UI.Image>(iconGo);
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+
+                var countGo = UIChild(slotRect, "Count");
+                var countRect = countGo.GetComponent<RectTransform>() ?? countGo.AddComponent<RectTransform>();
+                countRect.anchorMin = new Vector2(1f, 0f); countRect.anchorMax = new Vector2(1f, 0f);
+                countRect.pivot = new Vector2(1f, 0f);
+                countRect.anchoredPosition = new Vector2(-6f, 4f);
+                countRect.sizeDelta = new Vector2(44f, 25f);
+                var count = Component<TextMeshProUGUI>(countGo);
+                if (loc != null && loc.Font != null) count.font = loc.Font;
+                count.fontSize = 18f;
+                count.alignment = TextAlignmentOptions.BottomRight;
+                count.color = new Color(.9f, .82f, .58f, 1f);
+                count.raycastTarget = false;
+
+                slots[i] = Component<InventorySlotView>(slotGo);
+                slots[i].Configure(icon, count, background);
+            }
+
+            var scroll = Component<UnityEngine.UI.ScrollRect>(panel);
+            scroll.viewport = viewportRect;
+            scroll.content = contentRect;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = UnityEngine.UI.ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 24f;
+
+            string root = "Assets/Resources/Art/Inventory/";
+            var icons = new[]
+            {
+                LoadUiSprite(root + "food_ration.png"),
+                LoadUiSprite(root + "metal_scrap.png"),
+                LoadUiSprite(root + "refined_component.png"),
+                LoadUiSprite(root + "elite_equipment.png")
+            };
+            var view = Component<InventoryView>(panel);
+            view.Configure(slots, icons);
         }
 
         private static void BakeEntityPrefabs()
@@ -190,6 +309,9 @@ namespace TCC.EditorTools
                 "Assets/Resources/Art/ColonyV2/contamination_oil.png", 1.35f, .5f);
             var enemy = MakeEntityPrefab<EnemyRobot>(prefabRoot + "EnemyRobot.prefab", "Scavenger Robot",
                 "Assets/Resources/Art/ColonyV2/enemy_robot.png", 1.15f, .42f);
+            var heavyEnemy = MakeEntityPrefab<EnemyRobot>(prefabRoot + "HeavyEnemyRobot.prefab", "Heavy Invader",
+                "Assets/Resources/Art/Enemies/enemy_heavy.png", 3.45f, .95f);
+            Set(heavyEnemy, "_heavy", true);
             var doctor = MakeEntityPrefab<MedicalDoctor>(prefabRoot + "MedicalDoctor.prefab", "Medical Doctor",
                 "Assets/Resources/Art/ColonyV2/bug_doctor.png", 1.05f, .38f);
 
@@ -199,6 +321,7 @@ namespace TCC.EditorTools
                 Set(simulation, "_metalPartPrefab", part);
                 Set(simulation, "_contaminationPrefab", contamination);
                 Set(simulation, "_enemyPrefab", enemy);
+                Set(simulation, "_heavyEnemyPrefab", heavyEnemy);
                 Set(simulation, "_doctorPrefab", doctor);
             }
 
@@ -300,6 +423,15 @@ namespace TCC.EditorTools
             return go;
         }
 
+        private static GameObject UIChild(Transform parent, string name)
+        {
+            var existing = parent.Find(name);
+            if (existing != null) return existing.gameObject;
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            return go;
+        }
+
         private static T Component<T>(GameObject go) where T : Component
         {
             var component = go.GetComponent<T>();
@@ -313,6 +445,7 @@ namespace TCC.EditorTools
             if (p == null) return;
             if (value is float f) p.floatValue = f;
             else if (value is string s) p.stringValue = s;
+            else if (value is bool b) p.boolValue = b;
             else if (value is Object o) p.objectReferenceValue = o;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
@@ -336,6 +469,22 @@ namespace TCC.EditorTools
                 importer.SaveAndReimport();
             }
             else Object.DestroyImmediate(texture);
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
+        private static Sprite LoadUiSprite(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer != null && (importer.textureType != TextureImporterType.Sprite || importer.filterMode != FilterMode.Point))
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spritePixelsPerUnit = 96f;
+                importer.filterMode = FilterMode.Point;
+                importer.mipmapEnabled = false;
+                importer.alphaIsTransparency = true;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 

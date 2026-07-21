@@ -34,6 +34,9 @@ MonoBehaviour:
   - key: hud.buy_food
     zh: '购买食物 30'
     en: 'Buy Food 30'
+  - key: hud.inventory
+    zh: '物资背包 · 3×N'
+    en: 'CARGO · 3×N'
   - key: btn.language
     zh: 'EN'
     en: '中文'
@@ -101,8 +104,26 @@ MonoBehaviour:
     zh: '只有自由成虫可以进入'
     en: 'Only a free adult can enter'
   - key: toast.part_ready
-    zh: '工厂产出金属零件，点击回收'
-    en: 'Metal part produced; click to collect'
+    zh: '工厂产物已进入背包，点击格子出售'
+    en: 'Factory cargo stored; click its slot to sell'
+  - key: toast.cargo_sold
+    zh: '物资已出售：+{0} 金币'
+    en: 'Cargo sold: +{0} coins'
+  - key: toast.drag_food
+    zh: '把食物拖到虫子身上进行投喂'
+    en: 'Drag food onto a bug to feed it'
+  - key: toast.equipment_ready
+    zh: '外骨骼装备已进入背包，可出售或拖给工兵'
+    en: 'Exoskeleton stored; sell it or drag it onto a soldier'
+  - key: toast.elite_equipped
+    zh: '外骨骼适配完成：工兵生命与攻击翻倍'
+    en: 'Exoskeleton fitted: soldier health and damage doubled'
+  - key: toast.elite_required
+    zh: '外骨骼只能装备给尚未强化的工兵'
+    en: 'Exoskeletons require an unupgraded soldier'
+  - key: toast.heavy_invasion
+    zh: '警报：重型机械侵略者进入洞穴'
+    en: 'Alert: heavy mechanical invaders entered the cave'
   - key: toast.infected
     zh: '虫体受到污染，生命流逝加速'
     en: 'Bug infected; health and aging accelerated'
