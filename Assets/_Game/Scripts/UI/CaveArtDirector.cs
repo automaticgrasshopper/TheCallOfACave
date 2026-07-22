@@ -78,8 +78,9 @@ namespace TCC.UI
             var hud = _hudCard;
             if (hud != null)
             {
-                hud.sizeDelta = new Vector2(350f, 292f);
-                hud.anchoredPosition = new Vector2(-18f, 18f);
+                bool inSidebar = hud.parent != null && hud.parent.name == "Right Command Sidebar";
+                hud.sizeDelta = new Vector2(inSidebar ? 386f : 350f, inSidebar ? 286f : 292f);
+                hud.anchoredPosition = new Vector2(inSidebar ? 0f : -18f, 18f);
             }
             SetRect(_money, new Vector2(0f, -17f), new Vector2(318f, 40f), 28f);
             SetRect(_population, new Vector2(0f, -60f), new Vector2(318f, 32f), 20f);
@@ -102,6 +103,7 @@ namespace TCC.UI
         {
             var canvas = GameObject.Find("TitleMenuCanvas");
             if (canvas == null) return;
+            if (canvas.transform.Find("Title Artwork") != null) return;
             var rects = canvas.GetComponentsInChildren<RectTransform>(true);
             RectTransform Find(string objectName)
             {

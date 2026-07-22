@@ -20,6 +20,8 @@ namespace TCC.UI
         [SerializeField] private Button _continueButton;
         [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _quitButton;
+        [SerializeField] private GameObject _localizedSubtitle;
+        [SerializeField] private GameObject _titleArtwork;
 
         protected override void OnInit()
         {
@@ -28,11 +30,15 @@ namespace TCC.UI
             if (_settingsButton != null) _settingsButton.onClick.AddListener(OnSettings);
             if (_quitButton != null) _quitButton.onClick.AddListener(OnQuit);
             GameEvents.GameStateChanged += OnGameStateChanged;
+            GameEvents.LanguageChanged += RefreshSubtitle;
+            RefreshSubtitle(LocalizationManager.Exists
+                ? LocalizationManager.Instance.Current : Language.English);
         }
 
         protected override void OnDestroy()
         {
             GameEvents.GameStateChanged -= OnGameStateChanged;
+            GameEvents.LanguageChanged -= RefreshSubtitle;
             base.OnDestroy();
         }
 
@@ -71,11 +77,24 @@ namespace TCC.UI
             var state = GameManager.Exists ? GameManager.Instance.State : GameState.Boot;
             bool inProgress = state == GameState.Playing || state == GameState.Paused;
 
+            if (_titleArtwork != null) _titleArtwork.SetActive(state == GameState.Boot);
+
             if (_startLabel != null)
                 _startLabel.SetKey(inProgress ? LocalizationTable.Keys.MenuRestart
                                               : LocalizationTable.Keys.MenuStart);
             if (_continueButton != null)
                 _continueButton.interactable = state == GameState.Paused;
+            RefreshSubtitle(LocalizationManager.Exists
+                ? LocalizationManager.Instance.Current : Language.English);
+        }
+
+        private void RefreshSubtitle(Language language)
+        {
+            if (_localizedSubtitle != null)
+            {
+                var state = GameManager.Exists ? GameManager.Instance.State : GameState.Boot;
+                _localizedSubtitle.SetActive(language != Language.English && state == GameState.Boot);
+            }
         }
 
         private void Click() { if (AudioManager.Exists) AudioManager.Instance.PlaySfx(AudioLibrary.Ids.Click); }

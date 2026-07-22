@@ -46,9 +46,21 @@ MonoBehaviour:
   - key: hud.tab_build
     zh: '建造'
     en: 'BUILD'
+  - key: hud.tab_research
+    zh: '研究'
+    en: 'RESEARCH'
   - key: hud.tab_equipment
     zh: '装备'
     en: 'LOADOUT'
+  - key: hud.research_reserved
+    zh: '研究人才计划 · 需先建成研究院'
+    en: 'RESEARCH TALENTS · BUILD THE ACADEMY FIRST'
+  - key: hud.research_doctor
+    zh: '医学博士'
+    en: 'MEDICAL DOCTOR'
+  - key: hud.research_future
+    zh: '未来人才'
+    en: 'FUTURE TALENT'
   - key: hud.equipment_reserved
     zh: '选择士兵 · 模组位预留'
     en: 'SELECT SOLDIER · MODULE SLOTS RESERVED'
@@ -61,6 +73,9 @@ MonoBehaviour:
   - key: hud.equipment_core
     zh: '核心'
     en: 'CORE'
+  - key: build.factory
+    zh: '工厂\n{0} 金币'
+    en: 'FACTORY\n{0} COINS'
   - key: build.barracks
     zh: '兵营\n{0} 金币'
     en: 'BARRACKS\n{0} COINS'
@@ -68,8 +83,11 @@ MonoBehaviour:
     zh: '医院\n{0} 金币'
     en: 'HOSPITAL\n{0} COINS'
   - key: build.academy
-    zh: '医学院\n{0} 金币'
-    en: 'ACADEMY\n{0} COINS'
+    zh: '研究院\n{0} 金币'
+    en: 'RESEARCH ACADEMY\n{0} COINS'
+  - key: build.locked
+    zh: '未解锁\n先建前置设施'
+    en: 'LOCKED\nBUILD PREREQUISITE'
   - key: btn.language
     zh: 'EN'
     en: '中文'
@@ -163,6 +181,9 @@ MonoBehaviour:
   - key: toast.build_blocked
     zh: '此处被占用，或三级建筑占地超出基地边界'
     en: 'Blocked: the level-3 footprint overlaps another site or the base boundary'
+  - key: toast.build_locked
+    zh: '该设施尚未解锁，请先建造前置设施'
+    en: 'Facility locked: construct its prerequisite first'
   - key: toast.infected
     zh: '虫体受到污染，生命流逝加速'
     en: 'Bug infected; health and aging accelerated'
@@ -194,8 +215,8 @@ MonoBehaviour:
     zh: '医院 · 治疗区'
     en: 'HOSPITAL · TREATMENT'
   - key: zone.academy
-    zh: '医学院 · 博士培养'
-    en: 'MEDICAL ACADEMY · DOCTOR TRAINING'
+    zh: '研究院 · 人才培养'
+    en: 'RESEARCH ACADEMY · TALENT TRAINING'
   - key: toast.training_started
     zh: '工兵训练开始：消耗两年寿命'
     en: 'Soldier training begins: two colony-years committed'

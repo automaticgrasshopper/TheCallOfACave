@@ -260,23 +260,17 @@ namespace TCC.EditorTools
             if (world == null) return;
             foreach (var facility in Object.FindObjectsOfType<ColonyFacility>(true))
                 if (facility != null && facility.gameObject.scene.IsValid()) Object.DestroyImmediate(facility.gameObject);
-            foreach (string stale in new[] { "LaborCircle", "Factory Label", "Barracks Label", "Hospital Label", "Academy Label" })
+            foreach (string stale in new[] { "LaborCircle", "Factory Site", "Factory Label", "Barracks Label", "Hospital Label", "Academy Label" })
             {
                 var go = GameObject.Find(stale);
                 if (go != null) Object.DestroyImmediate(go);
-            }
-
-            if (factory != null)
-            {
-                var factorySite = (GameObject)PrefabUtility.InstantiatePrefab(factory.gameObject, world);
-                factorySite.name = "Factory Site";
-                factorySite.transform.localPosition = new Vector3(-7f, 3.2f, 0f);
             }
 
             var managers = GameObject.Find("[Managers]")?.transform;
             if (managers == null) return;
             var placementGo = Child(managers, "Building Placement Manager");
             var placement = Component<BuildingPlacementManager>(placementGo);
+            Set(placement, "_factoryPrefab", factory);
             Set(placement, "_barracksPrefab", barracks);
             Set(placement, "_hospitalPrefab", hospital);
             Set(placement, "_academyPrefab", academy);
@@ -350,7 +344,8 @@ namespace TCC.EditorTools
             var buy = GameObject.Find("BuyButton")?.GetComponent<UnityEngine.UI.Button>();
             if (hud == null || card == null || buy == null) return;
 
-            card.sizeDelta = new Vector2(350f, 292f);
+            var sidebar = BakeRightSidebar(card.parent, card);
+            card.sizeDelta = new Vector2(386f, 286f);
             var foodGo = card.Find("Food")?.gameObject;
             if (foodGo == null)
             {
@@ -384,8 +379,140 @@ namespace TCC.EditorTools
 
             Set(hud, "_foodText", foodText);
             Set(hud, "_buyFoodButton", buyFood);
-            BakeInventory(card.parent);
-            BakeBuildPalette(card.parent);
+            BakeInventory(sidebar);
+            BakeBuildPalette(sidebar);
+            BakeTitlePresentation();
+        }
+
+        private static Transform BakeRightSidebar(Transform canvas, RectTransform hudCard)
+        {
+            var sidebar = UIChild(canvas, "Right Command Sidebar");
+            var rect = sidebar.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, .5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(430f, 0f);
+            var image = Component<UnityEngine.UI.Image>(sidebar);
+            image.color = new Color(.008f, .014f, .017f, 1f);
+            PixelChrome.Apply(sidebar, new Color(.12f, .44f, .44f, .95f), new Color(.52f, .36f, .18f, .9f));
+            sidebar.transform.SetAsLastSibling();
+
+            foreach (string panelName in new[] { "Base Construction Palette", "Cargo Backpack" })
+            {
+                var existing = canvas.Find(panelName);
+                if (existing != null) existing.SetParent(rect, false);
+            }
+
+            if (hudCard != null)
+            {
+                hudCard.SetParent(rect, false);
+                hudCard.anchorMin = hudCard.anchorMax = new Vector2(.5f, 0f);
+                hudCard.pivot = new Vector2(.5f, 0f);
+                hudCard.anchoredPosition = new Vector2(0f, 18f);
+            }
+            return rect;
+        }
+
+        private static void BakeTitlePresentation()
+        {
+            var canvas = GameObject.Find("TitleMenuCanvas");
+            if (canvas == null) return;
+            var canvasRect = canvas.transform as RectTransform;
+            var artwork = UIChild(canvasRect, "Title Artwork");
+            var artworkRect = artwork.GetComponent<RectTransform>();
+            artworkRect.anchorMin = Vector2.zero; artworkRect.anchorMax = Vector2.one;
+            artworkRect.offsetMin = artworkRect.offsetMax = Vector2.zero;
+            artwork.transform.SetAsFirstSibling();
+
+            var vista = UIChild(artworkRect, "Cave Vista");
+            var vistaRect = vista.GetComponent<RectTransform>();
+            vistaRect.anchorMin = Vector2.zero; vistaRect.anchorMax = Vector2.one;
+            vistaRect.offsetMin = vistaRect.offsetMax = Vector2.zero;
+            var vistaImage = Component<UnityEngine.UI.Image>(vista);
+            vistaImage.sprite = LoadUiSprite("Assets/_Game/Art/Title/title_cave_vista.png");
+            vistaImage.color = Color.white;
+            vistaImage.preserveAspect = false;
+            vistaImage.raycastTarget = false;
+
+            var grade = UIChild(artworkRect, "Cinematic Grade");
+            var gradeRect = grade.GetComponent<RectTransform>();
+            gradeRect.anchorMin = Vector2.zero; gradeRect.anchorMax = Vector2.one;
+            gradeRect.offsetMin = gradeRect.offsetMax = Vector2.zero;
+            var gradeImage = Component<UnityEngine.UI.Image>(grade);
+            gradeImage.color = new Color(.005f, .012f, .015f, .18f);
+            gradeImage.raycastTarget = false;
+
+            var logo = UIChild(artworkRect, "English Art Logo");
+            var logoRect = logo.GetComponent<RectTransform>();
+            logoRect.anchorMin = logoRect.anchorMax = new Vector2(.5f, 1f);
+            logoRect.pivot = new Vector2(.5f, 1f);
+            logoRect.anchoredPosition = new Vector2(0f, -20f);
+            logoRect.sizeDelta = new Vector2(1040f, 500f);
+            var logoImage = Component<UnityEngine.UI.Image>(logo);
+            logoImage.sprite = LoadUiSprite("Assets/_Game/Art/Title/title_logo_en.png");
+            logoImage.color = Color.white;
+            logoImage.preserveAspect = true;
+            logoImage.raycastTarget = false;
+
+            var dim = canvas.transform.Find("Dim") as RectTransform;
+            if (dim != null)
+            {
+                dim.SetSiblingIndex(1);
+                var dimImage = dim.GetComponent<UnityEngine.UI.Image>();
+                if (dimImage != null) dimImage.color = new Color(.008f, .014f, .016f, .18f);
+            }
+
+            var box = canvas.transform.Find("Box") as RectTransform;
+            if (box == null) return;
+            box.SetAsLastSibling();
+            box.anchorMin = box.anchorMax = new Vector2(.5f, .5f);
+            box.pivot = new Vector2(.5f, .5f);
+            box.anchoredPosition = new Vector2(0f, -245f);
+            box.sizeDelta = new Vector2(470f, 390f);
+            var boxImage = box.GetComponent<UnityEngine.UI.Image>();
+            if (boxImage != null) boxImage.color = new Color(.012f, .024f, .027f, .9f);
+            PixelChrome.Apply(box.gameObject, new Color(.2f, .62f, .58f, .95f), new Color(.72f, .48f, .2f, 1f));
+
+            var subtitle = box.Find("Title") as RectTransform ?? box.Find("Localized Subtitle") as RectTransform;
+            if (subtitle != null)
+            {
+                subtitle.name = "Localized Subtitle";
+                subtitle.anchorMin = subtitle.anchorMax = new Vector2(.5f, .5f);
+                subtitle.pivot = new Vector2(.5f, .5f);
+                subtitle.anchoredPosition = new Vector2(0f, 145f);
+                subtitle.sizeDelta = new Vector2(420f, 52f);
+                var text = subtitle.GetComponent<TMP_Text>();
+                if (text != null)
+                {
+                    text.fontSize = 30f;
+                    text.color = new Color(.88f, .72f, .42f, 1f);
+                    text.alignment = TextAlignmentOptions.Center;
+                }
+            }
+
+            SetMenuRect(box.Find("StartButton") as RectTransform, 70f);
+            SetMenuRect(box.Find("ContinueButton") as RectTransform, 4f);
+            SetMenuRect(box.Find("SettingsButton") as RectTransform, -62f);
+            SetMenuRect(box.Find("QuitButton") as RectTransform, -128f);
+
+            var view = canvas.GetComponent<TitleMenuView>();
+            if (view != null)
+            {
+                Set(view, "_localizedSubtitle", subtitle != null ? subtitle.gameObject : null);
+                Set(view, "_titleArtwork", artwork);
+            }
+        }
+
+        private static void SetMenuRect(RectTransform rect, float y)
+        {
+            if (rect == null) return;
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+            rect.pivot = new Vector2(.5f, .5f);
+            rect.anchoredPosition = new Vector2(0f, y);
+            rect.sizeDelta = new Vector2(370f, 54f);
+            var text = rect.GetComponentInChildren<TMP_Text>(true);
+            if (text != null) text.fontSize = 22f;
         }
 
         private static void BakeBuildPalette(Transform canvas)
@@ -393,15 +520,15 @@ namespace TCC.EditorTools
             if (canvas == null) return;
             var panel = UIChild(canvas, "Base Construction Palette");
             var rect = panel.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(1f, 1f);
-            rect.anchoredPosition = new Vector2(-18f, -18f);
-            rect.sizeDelta = new Vector2(440f, 252f);
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+            rect.pivot = new Vector2(.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -18f);
+            rect.sizeDelta = new Vector2(386f, 350f);
             var image = Component<UnityEngine.UI.Image>(panel);
             image.color = new Color(.014f, .026f, .03f, .96f);
             PixelChrome.Apply(panel, new Color(.18f, .64f, .62f, 1f), new Color(.78f, .52f, .22f, 1f));
 
-            foreach (string stale in new[] { "Build Title", "Barracks Build Card", "Hospital Build Card", "Academy Build Card" })
+            foreach (string stale in new[] { "Build Title", "Factory Build Card", "Barracks Build Card", "Hospital Build Card", "Academy Build Card" })
             {
                 var child = rect.Find(stale);
                 if (child != null) Object.DestroyImmediate(child.gameObject);
@@ -417,8 +544,9 @@ namespace TCC.EditorTools
             ApplyUiText(title, 16f, new Color(.84f, .7f, .4f, 1f), TextAlignmentOptions.Center);
             Component<LocalizedText>(titleGo).SetKey(LocalizationTable.Keys.HudCommand);
 
-            var buildTab = TabButton(rect, "Build Tab", LocalizationTable.Keys.HudTabBuild, -103f);
-            var equipmentTab = TabButton(rect, "Equipment Tab", LocalizationTable.Keys.HudTabEquipment, 103f);
+            var buildTab = TabButton(rect, "Build Tab", LocalizationTable.Keys.HudTabBuild, -124f);
+            var researchTab = TabButton(rect, "Research Tab", LocalizationTable.Keys.HudTabResearch, 0f);
+            var equipmentTab = TabButton(rect, "Equipment Tab", LocalizationTable.Keys.HudTabEquipment, 124f);
 
             var buildPage = UIChild(rect, "Build Page");
             var buildRect = buildPage.GetComponent<RectTransform>();
@@ -436,12 +564,38 @@ namespace TCC.EditorTools
             ApplyUiText(hint, 12f, new Color(.58f, .68f, .62f, 1f), TextAlignmentOptions.Center);
             Component<LocalizedText>(hintGo).SetKey(LocalizationTable.Keys.HudBuild);
 
+            BuildCard(buildRect, "Factory Build Card", FacilityType.Factory, LocalizationTable.Keys.BuildFactory,
+                "Assets/Resources/Art/Facilities/facility_factory.png", -91f, -28f);
             BuildCard(buildRect, "Barracks Build Card", FacilityType.Barracks, LocalizationTable.Keys.BuildBarracks,
-                "Assets/Resources/Art/Facilities/facility_barracks.png", -140f);
+                "Assets/Resources/Art/Facilities/facility_barracks.png", 91f, -28f);
             BuildCard(buildRect, "Hospital Build Card", FacilityType.Hospital, LocalizationTable.Keys.BuildHospital,
-                "Assets/Resources/Art/Facilities/facility_hospital.png", 0f);
+                "Assets/Resources/Art/Facilities/facility_hospital.png", -91f, -150f);
             BuildCard(buildRect, "Academy Build Card", FacilityType.Academy, LocalizationTable.Keys.BuildAcademy,
-                "Assets/Resources/Art/Facilities/facility_academy.png", 140f);
+                "Assets/Resources/Art/Facilities/facility_academy.png", 91f, -150f);
+
+            var researchPage = UIChild(rect, "Research Page");
+            var researchRect = researchPage.GetComponent<RectTransform>();
+            researchRect.anchorMin = Vector2.zero; researchRect.anchorMax = Vector2.one;
+            researchRect.offsetMin = new Vector2(12f, 12f);
+            researchRect.offsetMax = new Vector2(-12f, -80f);
+            var researchHintGo = UIChild(researchRect, "Research Hint");
+            var researchHintRect = researchHintGo.GetComponent<RectTransform>();
+            researchHintRect.anchorMin = new Vector2(0f, 1f); researchHintRect.anchorMax = new Vector2(1f, 1f);
+            researchHintRect.pivot = new Vector2(.5f, 1f);
+            researchHintRect.anchoredPosition = Vector2.zero;
+            researchHintRect.sizeDelta = new Vector2(0f, 28f);
+            var researchHint = Component<TextMeshProUGUI>(researchHintGo);
+            ApplyUiText(researchHint, 12f, new Color(.66f, .72f, .66f, 1f), TextAlignmentOptions.Center);
+            Component<LocalizedText>(researchHintGo).SetKey(LocalizationTable.Keys.HudResearchReserved);
+            ResearchSlot(researchRect, "Medical Doctor Talent", LocalizationTable.Keys.HudResearchDoctor,
+                "Assets/Resources/Art/ColonyV2/bug_doctor.png", -91f, -36f, true);
+            ResearchSlot(researchRect, "Future Talent 1", LocalizationTable.Keys.HudResearchFuture,
+                null, 91f, -36f, false);
+            ResearchSlot(researchRect, "Future Talent 2", LocalizationTable.Keys.HudResearchFuture,
+                null, -91f, -154f, false);
+            ResearchSlot(researchRect, "Future Talent 3", LocalizationTable.Keys.HudResearchFuture,
+                null, 91f, -154f, false);
+            researchPage.SetActive(false);
 
             var equipmentPage = UIChild(rect, "Equipment Page");
             var equipmentRect = equipmentPage.GetComponent<RectTransform>();
@@ -457,13 +611,14 @@ namespace TCC.EditorTools
             var equipmentHint = Component<TextMeshProUGUI>(equipmentHintGo);
             ApplyUiText(equipmentHint, 13f, new Color(.66f, .72f, .66f, 1f), TextAlignmentOptions.Center);
             Component<LocalizedText>(equipmentHintGo).SetKey(LocalizationTable.Keys.HudEquipmentReserved);
-            EquipmentSlot(equipmentRect, "Armor Module Slot", LocalizationTable.Keys.HudEquipmentArmor, -126f);
+            EquipmentSlot(equipmentRect, "Armor Module Slot", LocalizationTable.Keys.HudEquipmentArmor, -112f);
             EquipmentSlot(equipmentRect, "Weapon Module Slot", LocalizationTable.Keys.HudEquipmentTool, 0f);
-            EquipmentSlot(equipmentRect, "Core Module Slot", LocalizationTable.Keys.HudEquipmentCore, 126f);
+            EquipmentSlot(equipmentRect, "Core Module Slot", LocalizationTable.Keys.HudEquipmentCore, 112f);
             equipmentPage.SetActive(false);
 
-            Component<CommandDockView>(panel).Configure(buildPage, equipmentPage, buildTab.button,
-                equipmentTab.button, buildTab.image, equipmentTab.image);
+            Component<CommandDockView>(panel).Configure(buildPage, researchPage, equipmentPage,
+                buildTab.button, researchTab.button, equipmentTab.button,
+                buildTab.image, researchTab.image, equipmentTab.image);
         }
 
         private static (UnityEngine.UI.Button button, UnityEngine.UI.Image image) TabButton(
@@ -474,7 +629,7 @@ namespace TCC.EditorTools
             rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
             rect.pivot = new Vector2(.5f, 1f);
             rect.anchoredPosition = new Vector2(x, -38f);
-            rect.sizeDelta = new Vector2(196f, 30f);
+            rect.sizeDelta = new Vector2(116f, 30f);
             var image = Component<UnityEngine.UI.Image>(go);
             image.color = new Color(.025f, .045f, .05f, .95f);
             PixelChrome.Apply(go, new Color(.15f, .48f, .48f, 1f), new Color(.65f, .45f, .2f, 1f));
@@ -523,15 +678,55 @@ namespace TCC.EditorTools
             Component<LocalizedText>(labelGo).SetKey(key);
         }
 
+        private static void ResearchSlot(RectTransform parent, string name, string key,
+            string iconPath, float x, float y, bool available)
+        {
+            var go = UIChild(parent, name);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+            rect.pivot = new Vector2(.5f, 1f);
+            rect.anchoredPosition = new Vector2(x, y);
+            rect.sizeDelta = new Vector2(170f, 106f);
+            var image = Component<UnityEngine.UI.Image>(go);
+            image.color = available ? new Color(.035f, .09f, .085f, .96f)
+                : new Color(.02f, .03f, .034f, .9f);
+            PixelChrome.Apply(go, available ? new Color(.18f, .52f, .48f, .9f)
+                : new Color(.12f, .22f, .22f, .75f), new Color(.48f, .34f, .18f, .85f));
+
+            var socket = UIChild(rect, "Portrait");
+            var socketRect = socket.GetComponent<RectTransform>();
+            socketRect.anchorMin = socketRect.anchorMax = new Vector2(.5f, 1f);
+            socketRect.pivot = new Vector2(.5f, 1f);
+            socketRect.anchoredPosition = new Vector2(0f, -6f);
+            socketRect.sizeDelta = new Vector2(70f, 66f);
+            var socketImage = Component<UnityEngine.UI.Image>(socket);
+            socketImage.sprite = string.IsNullOrEmpty(iconPath) ? null : LoadUiSprite(iconPath);
+            socketImage.enabled = socketImage.sprite != null;
+            socketImage.color = available ? Color.white : new Color(.25f, .3f, .3f, .25f);
+            socketImage.preserveAspect = true;
+            socketImage.raycastTarget = false;
+
+            var labelGo = UIChild(rect, "Label");
+            var labelRect = labelGo.GetComponent<RectTransform>();
+            labelRect.anchorMin = new Vector2(0f, 0f); labelRect.anchorMax = new Vector2(1f, 0f);
+            labelRect.pivot = new Vector2(.5f, 0f);
+            labelRect.anchoredPosition = new Vector2(0f, 5f);
+            labelRect.sizeDelta = new Vector2(-8f, 25f);
+            var label = Component<TextMeshProUGUI>(labelGo);
+            ApplyUiText(label, 12f, available ? new Color(.76f, .8f, .68f, 1f)
+                : new Color(.38f, .44f, .42f, 1f), TextAlignmentOptions.Center);
+            Component<LocalizedText>(labelGo).SetKey(key);
+        }
+
         private static void BuildCard(RectTransform parent, string name, FacilityType type,
-            string labelKey, string iconPath, float x)
+            string labelKey, string iconPath, float x, float y)
         {
             var card = UIChild(parent, name);
             var rect = card.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
             rect.pivot = new Vector2(.5f, 1f);
-            rect.anchoredPosition = new Vector2(x, -28f);
-            rect.sizeDelta = new Vector2(122f, 138f);
+            rect.anchoredPosition = new Vector2(x, y);
+            rect.sizeDelta = new Vector2(170f, 112f);
             var background = Component<UnityEngine.UI.Image>(card);
             background.color = new Color(.045f, .12f, .12f, .98f);
             PixelChrome.Apply(card, new Color(.2f, .58f, .57f, .9f), new Color(.64f, .45f, .22f, .9f));
@@ -541,7 +736,7 @@ namespace TCC.EditorTools
             iconRect.anchorMin = iconRect.anchorMax = new Vector2(.5f, 1f);
             iconRect.pivot = new Vector2(.5f, 1f);
             iconRect.anchoredPosition = new Vector2(0f, -7f);
-            iconRect.sizeDelta = new Vector2(88f, 82f);
+            iconRect.sizeDelta = new Vector2(72f, 66f);
             var icon = Component<UnityEngine.UI.Image>(iconGo);
             icon.sprite = LoadUiSprite(iconPath);
             icon.preserveAspect = true;
@@ -552,9 +747,9 @@ namespace TCC.EditorTools
             labelRect.anchorMin = new Vector2(0f, 0f); labelRect.anchorMax = new Vector2(1f, 0f);
             labelRect.pivot = new Vector2(.5f, 0f);
             labelRect.anchoredPosition = new Vector2(0f, 6f);
-            labelRect.sizeDelta = new Vector2(-10f, 42f);
+            labelRect.sizeDelta = new Vector2(-10f, 38f);
             var label = Component<TextMeshProUGUI>(labelGo);
-            ApplyUiText(label, 14f, new Color(.82f, .8f, .68f, 1f), TextAlignmentOptions.Center);
+            ApplyUiText(label, 12f, new Color(.82f, .8f, .68f, 1f), TextAlignmentOptions.Center);
             label.enableWordWrapping = true;
             label.raycastTarget = false;
 
@@ -578,10 +773,10 @@ namespace TCC.EditorTools
 
             var panel = UIChild(canvas, "Cargo Backpack");
             var panelRect = panel.GetComponent<RectTransform>() ?? panel.AddComponent<RectTransform>();
-            panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
-            panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.anchoredPosition = new Vector2(-386f, 18f);
-            panelRect.sizeDelta = new Vector2(330f, 330f);
+            panelRect.anchorMin = panelRect.anchorMax = new Vector2(.5f, 1f);
+            panelRect.pivot = new Vector2(.5f, 1f);
+            panelRect.anchoredPosition = new Vector2(0f, -382f);
+            panelRect.sizeDelta = new Vector2(386f, 360f);
             var panelImage = Component<UnityEngine.UI.Image>(panel);
             panelImage.color = new Color(.018f, .028f, .032f, .96f);
             PixelChrome.Apply(panel, new Color(.22f, .72f, .68f, 1f), new Color(.82f, .58f, .24f, 1f));
@@ -614,10 +809,10 @@ namespace TCC.EditorTools
             contentRect.anchorMin = new Vector2(0f, 1f); contentRect.anchorMax = new Vector2(1f, 1f);
             contentRect.pivot = new Vector2(.5f, 1f);
             contentRect.anchoredPosition = Vector2.zero;
-            contentRect.sizeDelta = new Vector2(0f, 352f);
+            contentRect.sizeDelta = new Vector2(0f, 298f);
             var grid = Component<UnityEngine.UI.GridLayoutGroup>(content);
-            grid.cellSize = new Vector2(86f, 78f);
-            grid.spacing = new Vector2(7f, 6f);
+            grid.cellSize = new Vector2(106f, 68f);
+            grid.spacing = new Vector2(7f, 5f);
             grid.padding = new RectOffset(7, 7, 7, 7);
             grid.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = 3;
@@ -645,13 +840,13 @@ namespace TCC.EditorTools
                 var iconRect = iconGo.GetComponent<RectTransform>() ?? iconGo.AddComponent<RectTransform>();
                 iconRect.anchorMin = new Vector2(.5f, .5f); iconRect.anchorMax = new Vector2(.5f, .5f);
                 iconRect.pivot = new Vector2(.5f, .5f);
-                iconRect.sizeDelta = new Vector2(58f, 58f);
+                iconRect.sizeDelta = new Vector2(52f, 52f);
                 iconRect.anchoredPosition = new Vector2(0f, 2f);
                 var icon = Component<UnityEngine.UI.Image>(iconGo);
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
-                icon.enabled = true;
-                icon.color = new Color(1f, 1f, 1f, .2f);
+                icon.enabled = false;
+                icon.color = Color.white;
 
                 var countGo = UIChild(slotRect, "Count");
                 var countRect = countGo.GetComponent<RectTransform>() ?? countGo.AddComponent<RectTransform>();

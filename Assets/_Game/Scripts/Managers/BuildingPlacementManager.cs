@@ -8,9 +8,10 @@ using TCC.UI;
 
 namespace TCC.Managers
 {
-    /// <summary>Grid-based RTS placement for the three player-built facilities.</summary>
+    /// <summary>Grid-based RTS placement with a linear facility unlock chain.</summary>
     public class BuildingPlacementManager : Singleton<BuildingPlacementManager>
     {
+        [SerializeField] private ColonyFacility _factoryPrefab;
         [SerializeField] private ColonyFacility _barracksPrefab;
         [SerializeField] private ColonyFacility _hospitalPrefab;
         [SerializeField] private ColonyFacility _academyPrefab;
@@ -42,10 +43,25 @@ namespace TCC.Managers
 
         public bool CanBuild(FacilityType type)
         {
-            if (type == FacilityType.Factory || PrefabFor(type) == null) return false;
+            if (!IsUnlocked(type) || PrefabFor(type) == null) return false;
             foreach (var facility in _placed)
                 if (facility != null && facility.Type == type) return false;
             return true;
+        }
+
+        public bool IsUnlocked(FacilityType type)
+        {
+            if (type == FacilityType.Factory) return true;
+            if (type == FacilityType.Barracks) return HasBuilt(FacilityType.Factory);
+            if (type == FacilityType.Hospital) return HasBuilt(FacilityType.Barracks);
+            return HasBuilt(FacilityType.Hospital);
+        }
+
+        private bool HasBuilt(FacilityType type)
+        {
+            foreach (var facility in _placed)
+                if (facility != null && facility.Type == type && facility.IsBuilt) return true;
+            return false;
         }
 
         public int BuildCost(FacilityType type)
@@ -147,7 +163,8 @@ namespace TCC.Managers
         }
 
         private ColonyFacility PrefabFor(FacilityType type)
-            => type == FacilityType.Barracks ? _barracksPrefab
+            => type == FacilityType.Factory ? _factoryPrefab
+                : type == FacilityType.Barracks ? _barracksPrefab
                 : type == FacilityType.Hospital ? _hospitalPrefab
                 : type == FacilityType.Academy ? _academyPrefab : null;
 

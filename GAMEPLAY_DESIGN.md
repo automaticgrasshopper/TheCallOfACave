@@ -120,7 +120,8 @@ All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The aca
 
 ### Construction grid and footprint
 
-- The fixed factory site is built in place. Barracks, hospital, and academy are dragged from the top-right construction palette onto the world.
+- Factory, barracks, hospital, and research academy are all dragged from the right command sidebar onto the world. No fixed factory placeholder remains on the map.
+- Facilities unlock linearly: **Factory → Barracks → Hospital → Research Academy**. A locked card cannot begin placement.
 - Placement snaps to a **0.5-world-unit grid** inside the editable construction region from **(-8.5, -4.5)** to **(3.5, 4.5)**.
 - Every player-placed facility reserves its level-3 square footprint immediately: **4.4 × 4.4 world units**. Reserved footprints cannot overlap the nursery or another facility.
 - Actual hollow-wall radii grow by level: **1.15 / 1.50 / 1.90 world units**. The reserved maximum footprint stays unchanged, so an upgrade never collides with a neighboring structure.
@@ -168,7 +169,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Soldiers recover 8 combat health per second while inside.
 - Patients remain until manually removed.
 
-### Medical Academy
+### Research Academy
 
 | Level | Doctors per batch | Build / upgrade cost |
 | --- | ---: | ---: |
@@ -197,15 +198,15 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 
 ## Interaction Rules
 
-- Click the fixed unbuilt factory site to construct it.
-- Drag an available barracks, hospital, or academy card from the top-right construction palette to a valid grid footprint to build it and pay its cost.
+- Drag an unlocked facility card from the right construction page to a valid grid footprint to build it and pay its cost.
 - Shift-click a constructed facility to upgrade it.
 - Click the academy to start a doctor batch when its requirements are met.
 - Drag adults into facilities.
 - Factory workers are locked in; hospital patients can be removed; trained soldiers are released from barracks.
 - Drag a soldier to the right side to deploy it for automatic combat.
-- The right-side backpack is a scrollable 3-column grid with a 3×3 visible window and 12 scene-authored slots.
-- The top-right command dock uses Build and Loadout tabs. The Loadout page reserves armor, weapon and core sockets so future equipment does not expand over the battlefield.
+- The right-side backpack is a scrollable 3-column grid with a 3×3 visible window and 12 scene-authored slots. Empty slots show no phantom item icon.
+- Build, Research, Loadout, backpack, and economy HUD share one opaque right sidebar outside the battlefield. Research exposes Medical Doctor plus three reserved future-talent sockets; Loadout reserves armor, weapon, and core sockets.
+- The boot menu uses a full-screen cave illustration and a fixed English art logo. English hides the duplicate subtitle; every other locale displays only its own localized title below the logo.
 - Purchased food enters the backpack. Drag food onto a damaged bug to heal it; direct bug-click feeding remains as a convenience shortcut and consumes the same stored item.
 - Factory products enter their matching stack. Click scrap, components, or equipment to sell one item.
 - Drag elite equipment onto an unupgraded soldier to consume it and double that soldier's combat health and attack.

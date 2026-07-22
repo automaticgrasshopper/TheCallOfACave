@@ -73,7 +73,13 @@ namespace TCC.UI
         }
 
         public void OnPointerClick(PointerEventData eventData)
-            => ToastView.Instance?.Key(LocalizationTable.Keys.ToastDragToBuild);
+        {
+            if (BuildingPlacementManager.Exists &&
+                !BuildingPlacementManager.Instance.IsUnlocked(_type))
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastBuildLocked);
+            else
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastDragToBuild);
+        }
 
         private void OnMoneyChanged(int _) => Refresh();
         private void OnLanguageChanged(Language _) => Refresh();
@@ -82,15 +88,20 @@ namespace TCC.UI
         {
             if (!BuildingPlacementManager.Exists) return;
             int cost = BuildingPlacementManager.Instance.BuildCost(_type);
+            bool unlocked = BuildingPlacementManager.Instance.IsUnlocked(_type);
             bool available = BuildingPlacementManager.Instance.CanBuild(_type) &&
                 EconomyManager.Exists && EconomyManager.Instance.CanAfford(cost);
             if (_label != null && LocalizationManager.Exists)
-                _label.text = string.Format(LocalizationManager.Instance.Get(_labelKey), cost);
+                _label.text = unlocked
+                    ? string.Format(LocalizationManager.Instance.Get(_labelKey), cost)
+                    : LocalizationManager.Instance.Get(LocalizationTable.Keys.BuildLocked);
             if (_background != null)
                 _background.color = available ? new Color(.045f, .12f, .12f, .98f)
                     : new Color(.035f, .04f, .045f, .86f);
             if (_icon != null)
-                _icon.color = available ? Color.white : new Color(.42f, .45f, .44f, .42f);
+                _icon.color = available ? Color.white
+                    : unlocked ? new Color(.52f, .55f, .52f, .52f)
+                    : new Color(.24f, .28f, .28f, .3f);
         }
     }
 }
