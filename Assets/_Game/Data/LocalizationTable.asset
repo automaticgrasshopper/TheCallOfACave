@@ -29,8 +29,8 @@ MonoBehaviour:
     zh: '投喂'
     en: 'Feed'
   - key: hud.buy
-    zh: '购买幼体 100'
-    en: 'Buy Bug 100'
+    zh: '购买幼体 120'
+    en: 'Buy Bug 120'
   - key: hud.buy_food
     zh: '购买食物 30'
     en: 'Buy Food 30'

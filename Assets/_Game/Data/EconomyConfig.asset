@@ -15,7 +15,7 @@ MonoBehaviour:
   startMoney: 300
   eggSellValue: 100
   laborIncomePerSec: 0
-  buyJuvenileCost: 100
+  buyJuvenileCost: 120
   buyFoodCost: 30
   factoryBuildCost: 100
   barracksBuildCost: 250

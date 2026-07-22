@@ -62,7 +62,7 @@ There is no passive income. An unhatched egg can be clicked and sold for 100 coi
 
 | Item or action | Cost / reward |
 | --- | ---: |
-| Buy juvenile | 100 coins |
+| Buy juvenile | 120 coins |
 | Buy one food | 30 coins |
 | Click and sell one unhatched egg | +100 coins |
 | Drop one food | 1 food; the first bug to reach it restores 55 hunger and 35 health |

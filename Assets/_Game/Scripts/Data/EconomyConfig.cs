@@ -20,7 +20,7 @@ namespace TCC.Data
 
         [Header("Buying")]
         [Tooltip("Coins to buy one juvenile into the nursery.")]
-        public int buyJuvenileCost = 100;
+        public int buyJuvenileCost = 120;
         public int buyFoodCost = 30;
         public int factoryBuildCost = 100;
         public int barracksBuildCost = 250;
