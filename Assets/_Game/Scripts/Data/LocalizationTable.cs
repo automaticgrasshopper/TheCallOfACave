@@ -61,6 +61,7 @@ namespace TCC.Data
             public const string Money = "hud.money";
             public const string Population = "hud.population";
             public const string Food = "hud.food";
+            public const string SessionTime = "hud.session_time";
             public const string BuyFood = "btn.buy_food";
             public const string HudBuy = "hud.buy";
             public const string HudBuyFood = "hud.buy_food";
@@ -96,6 +97,7 @@ namespace TCC.Data
             public const string GameOver = "state.gameover";
             public const string GameOverTitle = "gameover.title";
             public const string GameOverBody = "gameover.body";
+            public const string GameOverDuration = "gameover.duration";
             public const string GameOverRestart = "gameover.restart";
             public const string GameOverMenu = "gameover.menu";
 

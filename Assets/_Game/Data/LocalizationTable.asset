@@ -25,6 +25,9 @@ MonoBehaviour:
   - key: hud.food
     zh: '食物：{0}'
     en: 'Food: {0}'
+  - key: hud.session_time
+    zh: 'TIME: {0}\nYEAR: {1}'
+    en: 'TIME: {0}\nYEAR: {1}'
   - key: btn.buy_food
     zh: '投喂'
     en: 'Feed'
@@ -130,6 +133,9 @@ MonoBehaviour:
   - key: gameover.body
     zh: '最后一只洞穴虫已消失在污染与黑暗中。重建巢群，再次回应洞穴的召唤。'
     en: 'The last cave bug vanished into pollution and darkness. Rebuild the colony and answer the cave again.'
+  - key: gameover.duration
+    zh: 'TIME: {0}  ·  YEAR: {1}'
+    en: 'TIME: {0}  ·  YEAR: {1}'
   - key: gameover.restart
     zh: '重建巢群'
     en: 'REBUILD COLONY'

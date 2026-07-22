@@ -221,6 +221,8 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 
 The simulation has no fixed victory timer. Reproduction lets a well-managed colony continue across multiple three-minute generations, while waves keep escalating.
 
+The HUD clock has two rows. `TIME` records the current run duration in `MM:SS` (or `H:MM:SS` after one hour). `YEAR` is the colony-growth calendar: it starts at `0001`, advances once per 5 real-time seconds, expands naturally to five digits after year 9999, and caps at `99999`. Both advance only while the game state is Playing, freeze during pause, and are repeated on the Colony Lost screen.
+
 - **0–90 seconds:** build order, first adults, first production and defense choice.
 - **90–300 seconds:** five normal-enemy waves, population replacement, facility upgrades and academy route.
 - **315 seconds onward:** heavy enemies make elite equipment and coordinated defense relevant.

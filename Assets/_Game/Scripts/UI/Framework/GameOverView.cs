@@ -82,7 +82,11 @@ namespace TCC.UI
             if (!LocalizationManager.Exists) return;
             var loc = LocalizationManager.Instance;
             _title.text = loc.Get(LocalizationTable.Keys.GameOverTitle);
-            _body.text = loc.Get(LocalizationTable.Keys.GameOverBody);
+            string duration = GameManager.Exists
+                ? GameManager.FormatSessionTime(GameManager.Instance.SessionSeconds) : "00:00";
+            string year = GameManager.Exists ? GameManager.Instance.FormatColonyYear() : "0001";
+            _body.text = loc.Get(LocalizationTable.Keys.GameOverBody) + "\n\n" + string.Format(
+                loc.Get(LocalizationTable.Keys.GameOverDuration), duration, year);
             _restartLabel.text = loc.Get(LocalizationTable.Keys.GameOverRestart);
             _menuLabel.text = loc.Get(LocalizationTable.Keys.GameOverMenu);
         }

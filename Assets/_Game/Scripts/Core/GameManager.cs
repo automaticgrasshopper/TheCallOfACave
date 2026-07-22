@@ -20,6 +20,28 @@ namespace TCC.Core
         public static bool BootIntoPlay;
 
         public GameState State => _state;
+        public float SessionSeconds { get; private set; }
+
+        private void Update()
+        {
+            if (_state == GameState.Playing)
+                SessionSeconds += Time.unscaledDeltaTime;
+        }
+
+        public static string FormatSessionTime(float seconds)
+        {
+            int total = Mathf.Max(0, Mathf.FloorToInt(seconds));
+            int hours = total / 3600;
+            int minutes = (total % 3600) / 60;
+            int remainingSeconds = total % 60;
+            return hours > 0
+                ? string.Format("{0}:{1:00}:{2:00}", hours, minutes, remainingSeconds)
+                : string.Format("{0:00}:{1:00}", minutes, remainingSeconds);
+        }
+
+        public int ColonyYear => Mathf.Clamp(1 + Mathf.FloorToInt(SessionSeconds / 5f), 1, 99999);
+
+        public string FormatColonyYear() => ColonyYear.ToString("D4");
 
         protected override void OnAwake()
         {

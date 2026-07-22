@@ -19,6 +19,16 @@ namespace TCC.Managers
         private int _infants;
         private int _adults;
         private int _food;
+        private int _displayedSessionSecond = -1;
+
+        private void Update()
+        {
+            if (_hud == null || !GameManager.Exists) return;
+            int second = Mathf.FloorToInt(GameManager.Instance.SessionSeconds);
+            if (second == _displayedSessionSecond) return;
+            _displayedSessionSecond = second;
+            RefreshSessionTime();
+        }
 
         private void OnEnable()
         {
@@ -106,6 +116,16 @@ namespace TCC.Managers
             _hud.SetMoney(string.Format(loc.Get(LocalizationTable.Keys.Money), _money));
             _hud.SetPopulation(string.Format(loc.Get(LocalizationTable.Keys.Population), _infants, _adults));
             _hud.SetFood(string.Format(loc.Get(LocalizationTable.Keys.Food), _food));
+            RefreshSessionTime();
+        }
+
+        private void RefreshSessionTime()
+        {
+            if (_hud == null || !LocalizationManager.Exists || !GameManager.Exists) return;
+            string duration = GameManager.FormatSessionTime(GameManager.Instance.SessionSeconds);
+            _hud.SetSessionTime(string.Format(
+                LocalizationManager.Instance.Get(LocalizationTable.Keys.SessionTime),
+                duration, GameManager.Instance.FormatColonyYear()));
         }
 
         private void OnLanguagePressed()
