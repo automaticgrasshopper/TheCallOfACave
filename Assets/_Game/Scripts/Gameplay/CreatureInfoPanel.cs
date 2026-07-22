@@ -1,16 +1,18 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using TCC.Managers;
 
 namespace TCC.Gameplay
 {
-    /// <summary>Reusable world-space identity-card prefab shown on bug hover.</summary>
+    /// <summary>Reusable 1920x1080-safe screen-space identity card shown on bug hover.</summary>
     public class CreatureInfoPanel : MonoBehaviour
     {
         private Creature _creature;
-        private TextMeshPro _text;
-        private SpriteRenderer _back;
-        private static Sprite _pixel;
+        private GameObject _overlayRoot;
+        private Canvas _canvas;
+        private RectTransform _panelRect;
+        private TextMeshProUGUI _text;
 
         public void Init(Creature creature)
         {
@@ -22,59 +24,81 @@ namespace TCC.Gameplay
         public void SetVisible(bool visible)
         {
             EnsureVisuals();
-            _back.enabled = visible;
-            _text.enabled = visible;
+            if (_canvas != null) _canvas.enabled = visible;
         }
 
         private void LateUpdate()
         {
-            if (_creature == null) return;
-            EnsureVisuals();
+            if (_creature == null || _canvas == null || !_canvas.enabled) return;
             _text.text = _creature.InfoText;
-            // Creature sprites wobble and scale; keep the card stable and readable.
-            transform.localRotation = Quaternion.Inverse(transform.parent.localRotation);
-            Vector3 parentScale = transform.parent.localScale;
-            transform.localScale = new Vector3(1f / Mathf.Max(.01f, parentScale.x),
-                1f / Mathf.Max(.01f, parentScale.y), 1f);
+            PositionNearPointer();
+        }
+
+        private void PositionNearPointer()
+        {
+            var canvasRect = _overlayRoot.transform as RectTransform;
+            if (canvasRect == null || !RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvasRect, Input.mousePosition, null, out Vector2 local)) return;
+
+            Vector2 size = canvasRect.rect.size;
+            Vector2 desired = local + new Vector2(238f, 128f);
+            desired.x = Mathf.Clamp(desired.x, -size.x * .5f + 230f, size.x * .5f - 230f);
+            desired.y = Mathf.Clamp(desired.y, -size.y * .5f + 116f, size.y * .5f - 116f);
+            _panelRect.anchoredPosition = desired;
         }
 
         private void EnsureVisuals()
         {
-            if (_text != null) return;
-            var backGo = new GameObject("Info Card Back", typeof(SpriteRenderer));
-            backGo.transform.SetParent(transform, false);
-            backGo.transform.localScale = new Vector3(2.1f, 1.18f, 1f);
-            _back = backGo.GetComponent<SpriteRenderer>();
-            _back.sprite = Pixel;
-            _back.color = new Color(.015f, .025f, .028f, .88f);
-            _back.sortingOrder = 46;
+            if (_overlayRoot != null) return;
+            _overlayRoot = new GameObject("Creature Info Overlay", typeof(RectTransform),
+                typeof(Canvas), typeof(CanvasScaler));
+            _canvas = _overlayRoot.GetComponent<Canvas>();
+            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas.overrideSorting = true;
+            _canvas.sortingOrder = 680;
+            var scaler = _overlayRoot.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = .5f;
 
-            var textGo = new GameObject("Info Card Text", typeof(TextMeshPro));
-            textGo.transform.SetParent(transform, false);
-            textGo.transform.localPosition = new Vector3(0f, 0f, -.01f);
-            _text = textGo.GetComponent<TextMeshPro>();
-            _text.alignment = TextAlignmentOptions.MidlineLeft;
-            _text.fontSize = 1.45f;
-            _text.enableAutoSizing = false;
-            _text.lineSpacing = 4f;
-            _text.rectTransform.sizeDelta = new Vector2(1.88f, 1.05f);
-            _text.color = new Color(.9f, .95f, .86f, 1f);
-            _text.sortingOrder = 47;
+            var panel = new GameObject("Info Card", typeof(RectTransform),
+                typeof(CanvasRenderer), typeof(Image), typeof(Outline));
+            panel.transform.SetParent(_overlayRoot.transform, false);
+            _panelRect = (RectTransform)panel.transform;
+            _panelRect.anchorMin = _panelRect.anchorMax = new Vector2(.5f, .5f);
+            _panelRect.pivot = new Vector2(.5f, .5f);
+            _panelRect.sizeDelta = new Vector2(460f, 224f);
+            panel.GetComponent<Image>().color = new Color(.012f, .027f, .03f, .97f);
+            var outline = panel.GetComponent<Outline>();
+            outline.effectColor = new Color(.24f, .78f, .72f, .95f);
+            outline.effectDistance = new Vector2(3f, -3f);
+
+            var textObject = new GameObject("Info Text", typeof(RectTransform),
+                typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(panel.transform, false);
+            var textRect = (RectTransform)textObject.transform;
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(34f, 24f);
+            textRect.offsetMax = new Vector2(-30f, -22f);
+            _text = textObject.GetComponent<TextMeshProUGUI>();
             if (LocalizationManager.Exists && LocalizationManager.Instance.Font != null)
                 _text.font = LocalizationManager.Instance.Font;
+            _text.fontSize = 30f;
+            _text.enableAutoSizing = true;
+            _text.fontSizeMin = 24f;
+            _text.fontSizeMax = 30f;
+            _text.lineSpacing = 5f;
+            _text.alignment = TextAlignmentOptions.MidlineLeft;
+            _text.color = new Color(.9f, .97f, .91f, 1f);
+            _text.enableWordWrapping = true;
+            _text.overflowMode = TextOverflowModes.Ellipsis;
+            _text.raycastTarget = false;
         }
 
-        private static Sprite Pixel
+        private void OnDestroy()
         {
-            get
-            {
-                if (_pixel != null) return _pixel;
-                var texture = Texture2D.whiteTexture;
-                _pixel = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
-                    new Vector2(.5f, .5f), texture.width);
-                _pixel.name = "Runtime Info Card Pixel";
-                return _pixel;
-            }
+            if (_overlayRoot != null) Destroy(_overlayRoot);
         }
     }
 }

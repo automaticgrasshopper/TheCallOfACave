@@ -87,7 +87,7 @@ There is no passive income and eggs cannot be sold. Factory cargo is the primary
 | Adult | 30–150 s | 6–30 | Can breed or be assigned to a facility. |
 | Elder | 150–180 s | 30–36 | Uses the elder sprite and leaves pollution on death. |
 
-Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The card is hidden by default and appears only while that bug is under the mouse. Its four clearly separated lines show a permanent code, age percentage, hunger percentage, and role. The code is rolled once at spawn as two uppercase English letters plus three digits (for example `QF-027`) and never changes during that bug's life. Juveniles, unassigned adults, and elders use the Free role label. Existing health and age bars remain; soldiers add a combat-health bar.
+Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The 460×224 screen-space card is hidden by default and appears only while that bug is under the mouse. Its four lines show permanent code, integer colony age, satiety, and role. Age begins at 1 and rises by 1 every 5 real-time seconds. Satiety is a positive 0–100 value: higher means fuller, and eating raises it. The code is rolled once at spawn as two uppercase English letters plus three digits (for example `QF-027`) and never changes during that bug's life. Juveniles, unassigned adults, and elders use the Free role label.
 
 - Health starts at 100.
 - Health 50–100 is green, 20–50 yellow, and below 20 red.
@@ -221,7 +221,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 
 The simulation has no fixed victory timer. Reproduction lets a well-managed colony continue across multiple three-minute generations, while waves keep escalating.
 
-The HUD clock has two rows. `TIME` records the current run duration in `MM:SS` (or `H:MM:SS` after one hour). `YEAR` is the colony-growth calendar: it starts at `0001`, advances once per 5 real-time seconds, expands naturally to five digits after year 9999, and caps at `99999`. Both advance only while the game state is Playing, freeze during pause, and are repeated on the Colony Lost screen.
+The HUD clock is an independent two-row panel centered at the top of a 1920×1080 view, outside the resource card. `TIME` records the current run duration in `MM:SS` (or `H:MM:SS` after one hour). `YEAR` is the colony-growth calendar: it starts at `0001`, advances once per 5 real-time seconds, expands naturally to five digits after year 9999, and caps at `99999`. Both advance only while the game state is Playing, freeze during pause, and are repeated on the Colony Lost screen.
 
 - **0–90 seconds:** build order, first adults, first production and defense choice.
 - **90–300 seconds:** five normal-enemy waves, population replacement, facility upgrades and academy route.

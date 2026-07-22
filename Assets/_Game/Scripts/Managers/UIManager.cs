@@ -123,9 +123,7 @@ namespace TCC.Managers
         {
             if (_hud == null || !LocalizationManager.Exists || !GameManager.Exists) return;
             string duration = GameManager.FormatSessionTime(GameManager.Instance.SessionSeconds);
-            _hud.SetSessionTime(string.Format(
-                LocalizationManager.Instance.Get(LocalizationTable.Keys.SessionTime),
-                duration, GameManager.Instance.FormatColonyYear()));
+            _hud.SetSessionClock(duration, GameManager.Instance.FormatColonyYear());
         }
 
         private void OnLanguagePressed()
