@@ -38,6 +38,10 @@ namespace TCC.Gameplay
         private float _structureHealth;
         private bool _placementPreview;
         private bool _placementValid;
+        private SpriteRenderer _healthBack;
+        private SpriteRenderer _healthFill;
+        private FacilityInfoPanel _infoPanel;
+        private static Sprite _statusPixel;
 
         public FacilityType Type => _type;
         public bool IsBuilt => _level > 0;
@@ -47,6 +51,34 @@ namespace TCC.Gameplay
         public bool IsPlacementPreview => _placementPreview;
         public Vector2 Center => transform.position;
         public bool CanBeAttacked => IsBuilt && !_placementPreview;
+        public float StructureHealth => Mathf.Max(0f, _structureHealth);
+        public float MaxStructureHealth
+        {
+            get
+            {
+                var cfg = SimulationManager.Exists ? SimulationManager.Instance.Config
+                    : FindObjectOfType<SimulationManager>()?.Config;
+                if (cfg != null) return cfg.FacilityMaxHealth(_level);
+                return _level >= 3 ? 300f : _level == 2 ? 120f : _level == 1 ? 100f : 0f;
+            }
+        }
+        public float StructureHealthNormalized => MaxStructureHealth > 0f
+            ? Mathf.Clamp01(StructureHealth / MaxStructureHealth) : 0f;
+        public string InfoText
+        {
+            get
+            {
+                if (!LocalizationManager.Exists) return string.Empty;
+                var loc = LocalizationManager.Instance;
+                string typeKey = _type == FacilityType.Factory ? LocalizationTable.Keys.ZoneFactory
+                    : _type == FacilityType.Barracks ? LocalizationTable.Keys.ZoneBarracks
+                    : _type == FacilityType.Hospital ? LocalizationTable.Keys.ZoneHospital
+                    : LocalizationTable.Keys.ZoneAcademy;
+                string format = loc.Get(LocalizationTable.Keys.FacilityInfo).Replace("\\n", "\n");
+                return string.Format(format, loc.Get(typeKey), _level,
+                    Mathf.CeilToInt(StructureHealth), Mathf.RoundToInt(MaxStructureHealth));
+            }
+        }
         public int Capacity => _type == FacilityType.Academy
             ? new[] { 0, 2, 4, 6 }[_level]
             : new[] { 0, 3, 5, 10 }[_level];
@@ -54,6 +86,18 @@ namespace TCC.Gameplay
         private void Start()
         {
             if (IsBuilt) ResetStructureHealth();
+            EnsureHealthBar();
+            var panelPrefab = Resources.Load<FacilityInfoPanel>("UI/FacilityInfoPanel");
+            if (panelPrefab != null)
+                _infoPanel = Instantiate(panelPrefab, transform);
+            else
+            {
+                var panelObject = new GameObject("Facility Info Panel", typeof(FacilityInfoPanel));
+                panelObject.transform.SetParent(transform, false);
+                _infoPanel = panelObject.GetComponent<FacilityInfoPanel>();
+            }
+            _infoPanel.Init(this);
+            RefreshHealthBar();
         }
 
         public void Configure(FacilityType type, float radius, SpriteRenderer ring,
@@ -177,6 +221,13 @@ namespace TCC.Gameplay
             if (_type == FacilityType.Academy) TryStartDoctorBatch();
         }
 
+        private void OnMouseEnter()
+        {
+            if (!_placementPreview && IsBuilt) _infoPanel?.SetVisible(true);
+        }
+
+        private void OnMouseExit() => _infoPanel?.SetVisible(false);
+
         private void TryBuild()
         {
             var eco = EconomyManager.Exists ? EconomyManager.Instance : null;
@@ -240,6 +291,13 @@ namespace TCC.Gameplay
             if (!IsBuilt || !SimulationManager.Exists) { SetProgress(0f, false); return; }
             Cleanup();
             var cfg = SimulationManager.Instance.Config;
+            if (_structureHealth < MaxStructureHealth &&
+                !SimulationManager.Instance.IsFacilityThreatened(this))
+            {
+                _structureHealth = Mathf.Min(MaxStructureHealth, _structureHealth +
+                    MaxStructureHealth * cfg.facilityRegenPercentPerSecond * Time.deltaTime);
+            }
+            RefreshHealthBar();
             float bestProgress = 0f;
             bool progressVisible = false;
 
@@ -323,12 +381,14 @@ namespace TCC.Gameplay
         {
             if (!CanBeAttacked || amount <= 0f) return;
             _structureHealth -= amount;
+            RefreshHealthBar();
             if (_structureHealth > 0f) return;
 
             _level--;
             if (_level <= 0)
             {
                 _level = 0;
+                _infoPanel?.SetVisible(false);
                 foreach (var slot in _slots)
                 {
                     if (slot.creature == null) continue;
@@ -358,8 +418,62 @@ namespace TCC.Gameplay
 
         private void ResetStructureHealth()
         {
-            var cfg = SimulationManager.Exists ? SimulationManager.Instance.Config : null;
-            _structureHealth = (cfg != null ? cfg.facilityHealthPerLevel : 80f) * Mathf.Max(1, _level);
+            _structureHealth = MaxStructureHealth;
+            RefreshHealthBar();
+        }
+
+        private void EnsureHealthBar()
+        {
+            if (_healthFill != null) return;
+            _healthBack = MakeHealthBarPart("Facility Health Back",
+                new Color(.015f, .025f, .025f, .96f), 27);
+            _healthFill = MakeHealthBarPart("Facility Health Fill",
+                new Color(.27f, .8f, .38f, 1f), 28);
+        }
+
+        private SpriteRenderer MakeHealthBarPart(string name, Color color, int order)
+        {
+            var child = transform.Find(name);
+            var go = child != null ? child.gameObject : new GameObject(name);
+            if (child == null) go.transform.SetParent(transform, false);
+            var renderer = go.GetComponent<SpriteRenderer>() ?? go.AddComponent<SpriteRenderer>();
+            renderer.sprite = StatusPixel;
+            renderer.color = color;
+            renderer.sortingOrder = order;
+            return renderer;
+        }
+
+        private void RefreshHealthBar()
+        {
+            EnsureHealthBar();
+            bool visible = IsBuilt && !_placementPreview;
+            _healthBack.enabled = visible;
+            _healthFill.enabled = visible;
+            if (!visible) return;
+
+            float value = StructureHealthNormalized;
+            float width = Mathf.Max(1.5f, _radius * 1.25f);
+            float y = -_radius - .2f;
+            _healthBack.transform.localPosition = new Vector3(0f, y, 0f);
+            _healthBack.transform.localScale = new Vector3(width, .12f, 1f);
+            _healthFill.transform.localPosition = new Vector3(-width * .5f + width * value * .5f, y, -.01f);
+            _healthFill.transform.localScale = new Vector3(Mathf.Max(.001f, width * value), .075f, 1f);
+            _healthFill.color = value < .25f ? new Color(.92f, .2f, .14f, 1f)
+                : value < .55f ? new Color(.95f, .68f, .16f, 1f)
+                : new Color(.27f, .8f, .38f, 1f);
+        }
+
+        private static Sprite StatusPixel
+        {
+            get
+            {
+                if (_statusPixel != null) return _statusPixel;
+                var texture = Texture2D.whiteTexture;
+                _statusPixel = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
+                    new Vector2(.5f, .5f), texture.width);
+                _statusPixel.name = "Runtime Facility Status Pixel";
+                return _statusPixel;
+            }
         }
 
         private void RefreshVisual()
@@ -416,6 +530,7 @@ namespace TCC.Gameplay
                 _progressBack.transform.localPosition = new Vector3(0f, _radius + .14f, 0f);
             var collider = GetComponent<CircleCollider2D>();
             if (collider != null) collider.radius = _radius;
+            if (Application.isPlaying) RefreshHealthBar();
         }
     }
 }

@@ -87,6 +87,7 @@ namespace TCC.Data
             public const string Resume = "btn.resume";
             public const string HintFeed = "hint.feed";
             public const string CreatureInfo = "creature.info";
+            public const string FacilityInfo = "facility.info";
             public const string RoleFree = "role.free";
             public const string RoleWorker = "role.worker";
             public const string RoleDoctor = "role.doctor";

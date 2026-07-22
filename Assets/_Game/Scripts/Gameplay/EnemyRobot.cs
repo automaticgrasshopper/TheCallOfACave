@@ -15,6 +15,8 @@ namespace TCC.Gameplay
         public Vector2 Position => transform.position;
         public bool Alive => _health > 0f;
         public bool IsHeavy => _heavy;
+        public bool IsTargeting(ColonyFacility facility)
+            => Alive && facility != null && _facilityTarget == facility;
 
         public void Init(SimulationManager sim)
         {
@@ -42,9 +44,19 @@ namespace TCC.Gameplay
                 if (_attackTimer <= 0f)
                 {
                     _attackTimer = _sim.Config.attackInterval;
-                    float damage = _heavy ? _sim.Config.heavyEnemyDamage : _sim.Config.enemyDamage;
-                    if (_creatureTarget != null) _creatureTarget.TakeCombatDamage(damage, delta.normalized);
-                    else _facilityTarget.TakeDamage(damage);
+                    if (_creatureTarget != null)
+                    {
+                        float damage = _heavy ? _sim.Config.heavyEnemyDamage : _sim.Config.enemyDamage;
+                        _creatureTarget.TakeCombatDamage(damage, delta.normalized);
+                    }
+                    else
+                    {
+                        int min = _heavy ? _sim.Config.heavyEnemyFacilityDamageMin
+                            : _sim.Config.enemyFacilityDamageMin;
+                        int max = _heavy ? _sim.Config.heavyEnemyFacilityDamageMax
+                            : _sim.Config.enemyFacilityDamageMax;
+                        _facilityTarget.TakeDamage(Random.Range(min, max + 1));
+                    }
                 }
             }
         }

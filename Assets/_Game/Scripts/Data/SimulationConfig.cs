@@ -95,7 +95,16 @@ namespace TCC.Data
         public float attackInterval = 0.75f;
         [Tooltip("Untrained adults deal one fifth of a soldier's damage.")]
         public float civilianDamageDivisor = 5f;
-        public float facilityHealthPerLevel = 80f;
+        [Header("Facility durability")]
+        public float facilityLevel1MaxHealth = 100f;
+        public float facilityLevel2MaxHealth = 120f;
+        public float facilityLevel3MaxHealth = 300f;
+        [Tooltip("Fraction of maximum durability restored per second while no enemy targets the facility.")]
+        public float facilityRegenPercentPerSecond = 0.01f;
+        public int enemyFacilityDamageMin = 5;
+        public int enemyFacilityDamageMax = 15;
+        public int heavyEnemyFacilityDamageMin = 10;
+        public int heavyEnemyFacilityDamageMax = 30;
         public float combatAgeMultiplier = 1.5f;
         public float eliteSoldierMultiplier = 2f;
 
@@ -109,5 +118,10 @@ namespace TCC.Data
 
         public float FacilityRadius(int level)
             => level >= 3 ? facilityLevel3Radius : level == 2 ? facilityLevel2Radius : facilityLevel1Radius;
+
+        public float FacilityMaxHealth(int level)
+            => level >= 3 ? facilityLevel3MaxHealth
+                : level == 2 ? facilityLevel2MaxHealth
+                : level == 1 ? facilityLevel1MaxHealth : 0f;
     }
 }

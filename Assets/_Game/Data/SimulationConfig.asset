@@ -69,6 +69,13 @@ MonoBehaviour:
   heavyEnemyDamage: 22
   attackInterval: 0.75
   civilianDamageDivisor: 5
-  facilityHealthPerLevel: 80
+  facilityLevel1MaxHealth: 100
+  facilityLevel2MaxHealth: 120
+  facilityLevel3MaxHealth: 300
+  facilityRegenPercentPerSecond: 0.01
+  enemyFacilityDamageMin: 5
+  enemyFacilityDamageMax: 15
+  heavyEnemyFacilityDamageMin: 10
+  heavyEnemyFacilityDamageMax: 30
   combatAgeMultiplier: 1.5
   eliteSoldierMultiplier: 2

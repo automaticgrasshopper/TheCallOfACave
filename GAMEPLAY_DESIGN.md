@@ -199,13 +199,15 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Combat health reaching zero kills the soldier and produces pollution.
 - Every enemy continuously attacks the nearest visible valid target, whether that target is a bug or a constructed facility.
 - A normal adult can fight automatically for 2 damage per strike, exactly one fifth of a standard soldier. Juveniles and elders die from a single enemy hit.
-- Each facility level has structural health. Depleting it downgrades a level-2 or level-3 facility; depleting level 1 destroys the facility and releases every adult occupant as Free.
+- Level 1 / 2 / 3 facilities have 100 / 120 / 300 maximum durability. Normal enemies deal a random 5–15 facility damage per strike; heavy enemies deal 10–30.
+- A damaged facility restores 1% of its current level's maximum durability per second once no living enemy targets it. Depleting durability downgrades a level-2 or level-3 facility; depleting level 1 destroys the facility and releases every adult occupant as Free.
 - Enemy death never creates pollution.
 
 ## Interaction Rules
 
 - Drag an unlocked facility card from the right construction page to a valid grid footprint to build it and pay its cost.
 - Shift-click a constructed facility to upgrade it.
+- Hover a constructed facility to see a localized card with its facility type, level, and exact durability. A persistent world-space bar also shows durability at a glance.
 - Click the academy to start a doctor batch when its requirements are met.
 - Drag adults into facilities.
 - Factory workers remain assigned until retirement; hospital patients can be removed; trained soldiers are released from barracks.

@@ -278,6 +278,15 @@ namespace TCC.Managers
             return best;
         }
 
+        public bool IsFacilityThreatened(ColonyFacility facility)
+        {
+            if (facility == null) return false;
+            _enemies.RemoveAll(e => e == null || !e.Alive);
+            foreach (var enemy in _enemies)
+                if (enemy.IsTargeting(facility)) return true;
+            return false;
+        }
+
         public DroppedFood ClosestFood(Creature creature, float radius)
         {
             _foods.RemoveAll(f => f == null || !f.Available);

@@ -103,6 +103,9 @@ MonoBehaviour:
   - key: creature.info
     zh: '代号：{0}\n年龄：{1} 岁\n饱腹：{2}%\n工种：{3}'
     en: 'Code: {0}\nAge: {1} years\nSatiety: {2}%\nRole: {3}'
+  - key: facility.info
+    zh: '设施：{0}\n等级：{1}    耐久：{2} / {3}'
+    en: 'Facility: {0}\nLevel: {1}    Durability: {2} / {3}'
   - key: role.free
     zh: '自由'
     en: 'Free'
