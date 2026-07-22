@@ -33,6 +33,8 @@ namespace TCC.Gameplay
         {
             if (_facility == null || _canvas == null || !_canvas.enabled) return;
             _text.text = _facility.InfoText;
+            _panelRect.sizeDelta = new Vector2(520f,
+                _facility.Type == FacilityType.Factory ? 300f : 218f);
             float health = _facility.StructureHealthNormalized;
             _healthFill.anchorMax = new Vector2(Mathf.Max(.001f, health), 1f);
             _healthFillImage.color = health < .25f ? new Color(.92f, .2f, .14f, 1f)
@@ -48,9 +50,11 @@ namespace TCC.Gameplay
                 canvasRect, Input.mousePosition, null, out Vector2 local)) return;
 
             Vector2 size = canvasRect.rect.size;
-            Vector2 desired = local + new Vector2(248f, 106f);
-            desired.x = Mathf.Clamp(desired.x, -size.x * .5f + 240f, size.x * .5f - 240f);
-            desired.y = Mathf.Clamp(desired.y, -size.y * .5f + 90f, size.y * .5f - 90f);
+            float halfHeight = _panelRect.rect.height * .5f;
+            Vector2 desired = local + new Vector2(268f, halfHeight + 16f);
+            desired.x = Mathf.Clamp(desired.x, -size.x * .5f + 260f, size.x * .5f - 260f);
+            desired.y = Mathf.Clamp(desired.y, -size.y * .5f + halfHeight,
+                size.y * .5f - halfHeight);
             _panelRect.anchoredPosition = desired;
         }
 

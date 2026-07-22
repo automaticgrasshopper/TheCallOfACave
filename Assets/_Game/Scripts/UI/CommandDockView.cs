@@ -18,6 +18,8 @@ namespace TCC.UI
 
         private void OnEnable()
         {
+            if (_equipmentPage != null && _equipmentPage.GetComponent<EquipmentSynthesisView>() == null)
+                _equipmentPage.AddComponent<EquipmentSynthesisView>();
             if (_buildTab != null) _buildTab.onClick.AddListener(ShowBuild);
             if (_researchTab != null) _researchTab.onClick.AddListener(ShowResearch);
             if (_equipmentTab != null) _equipmentTab.onClick.AddListener(ShowEquipment);

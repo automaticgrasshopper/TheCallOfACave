@@ -79,6 +79,7 @@ namespace TCC.Gameplay
             if (!Alive) return;
             _health -= amount;
             if (_health > 0f) return;
+            _sim?.SpawnEnemyPart(Position, _heavy);
             _sim?.RemoveEnemy(this);
             Destroy(gameObject);
         }

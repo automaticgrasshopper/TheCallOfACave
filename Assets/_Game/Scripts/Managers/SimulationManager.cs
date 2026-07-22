@@ -150,9 +150,11 @@ namespace TCC.Managers
             if (!InventoryManager.Exists) return;
             var type = _config.FactoryItem(factoryLevel);
             InventoryManager.Instance.Add(type);
-            ToastView.Instance?.Key(type == InventoryItemType.EliteEquipment
-                ? LocalizationTable.Keys.ToastEquipmentReady
-                : LocalizationTable.Keys.ToastPartReady);
+            ToastView.Instance?.Key(type == InventoryItemType.AdvancedPartA
+                ? LocalizationTable.Keys.ToastAdvancedPartAReady
+                : type == InventoryItemType.AdvancedPartB
+                    ? LocalizationTable.Keys.ToastAdvancedPartBReady
+                    : LocalizationTable.Keys.ToastPartReady);
         }
 
         public void SpawnContamination(Vector2 position)
@@ -172,6 +174,25 @@ namespace TCC.Managers
             _foods.Add(food);
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodDropped);
             return true;
+        }
+
+        public bool SpawnLooseEquipment(Vector2 position, InventoryItemType type)
+        {
+            position = ClampWorld(position);
+            var equipment = CreateEntity<DroppedEquipment>("Dropped Equipment",
+                "Art/Inventory/elite_equipment", .72f, position);
+            equipment.Init(type);
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastEquipmentDropped);
+            return true;
+        }
+
+        public void SpawnEnemyPart(Vector2 position, bool heavy)
+        {
+            var type = heavy ? InventoryItemType.SpecialEnemyPart : InventoryItemType.MetalScrap;
+            string resource = heavy ? "Art/Inventory/refined_component" : "Art/Inventory/metal_scrap";
+            var part = CreateEntity<DroppedPart>(heavy ? "Special Enemy Part" : "Basic Enemy Part",
+                resource, .58f, ClampWorld(position));
+            part.Init(type);
         }
 
         public void SpawnDoctor(Vector2 position, ColonyFacility home)

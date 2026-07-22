@@ -70,13 +70,14 @@ namespace TCC.Data
         public float facilityLevel3Radius = 1.9f;
         public Vector2 buildingAreaMin = new Vector2(-8.5f, -4.5f);
         public Vector2 buildingAreaMax = new Vector2(3.5f, 4.5f);
-        [Tooltip("Level 1 makes scrap, level 2 makes components, level 3 makes elite equipment.")]
+        [Tooltip("Level 1 makes basic parts, level 2 makes intermediate parts, level 3 randomly makes one of two advanced parts.")]
         public float factoryLevel1Interval = 8f;
         public float factoryLevel2Interval = 7f;
         public float factoryLevel3Interval = 12f;
         public int factoryLevel1SaleValue = 80;
         public int factoryLevel2SaleValue = 130;
         public int factoryLevel3SaleValue = 240;
+        public int advancedEquipmentSaleValue = 480;
         public float hospitalTreatmentSeconds = 5f;
         public float hospitalCombatHealPerSecond = 8f;
         public float academyTrainingSeconds = 10f;
@@ -87,6 +88,7 @@ namespace TCC.Data
         public float invasionWaveInterval = 45f;
         public float heavyEnemyStartSeconds = 300f;
         public float soldierMaxHealth = 100f;
+        public float soldierDefense = 3f;
         public float enemyMaxHealth = 110f;
         public float heavyEnemyMaxHealth = 330f;
         public float soldierDamage = 10f;
@@ -107,12 +109,14 @@ namespace TCC.Data
         public int heavyEnemyFacilityDamageMax = 30;
         public float combatAgeMultiplier = 1.5f;
         public float eliteSoldierMultiplier = 2f;
+        [Tooltip("Advanced equipment is 150% stronger than a normal soldier, for 250% total attack.")]
+        public float advancedSoldierMultiplier = 2.5f;
 
         public float FactoryInterval(int level)
             => level >= 3 ? factoryLevel3Interval : level == 2 ? factoryLevel2Interval : factoryLevel1Interval;
 
         public InventoryItemType FactoryItem(int level)
-            => level >= 3 ? InventoryItemType.EliteEquipment
+            => level >= 3 ? (Random.value < .5f ? InventoryItemType.AdvancedPartA : InventoryItemType.AdvancedPartB)
                 : level == 2 ? InventoryItemType.RefinedComponent
                 : InventoryItemType.MetalScrap;
 

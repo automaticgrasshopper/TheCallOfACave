@@ -65,8 +65,45 @@ namespace TCC.Managers
                 case InventoryItemType.MetalScrap: return cfg.factoryLevel1SaleValue;
                 case InventoryItemType.RefinedComponent: return cfg.factoryLevel2SaleValue;
                 case InventoryItemType.EliteEquipment: return cfg.factoryLevel3SaleValue;
+                case InventoryItemType.AdvancedEquipment: return cfg.advancedEquipmentSaleValue;
                 default: return 0;
             }
+        }
+
+        public bool TryCraftEliteEquipment()
+        {
+            if (Count(InventoryItemType.AdvancedPartA) < 1 ||
+                Count(InventoryItemType.AdvancedPartB) < 1)
+            {
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastCraftNeedParts);
+                return false;
+            }
+
+            _counts[(int)InventoryItemType.AdvancedPartA]--;
+            _counts[(int)InventoryItemType.AdvancedPartB]--;
+            _counts[(int)InventoryItemType.EliteEquipment]++;
+            Changed?.Invoke();
+            GameEvents.RaiseInventoryChanged();
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastEquipmentCrafted);
+            return true;
+        }
+
+        public bool TryCraftAdvancedEquipment()
+        {
+            if (Count(InventoryItemType.EliteEquipment) < 1 ||
+                Count(InventoryItemType.SpecialEnemyPart) < 1)
+            {
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastCraftNeedAdvancedParts);
+                return false;
+            }
+
+            _counts[(int)InventoryItemType.EliteEquipment]--;
+            _counts[(int)InventoryItemType.SpecialEnemyPart]--;
+            _counts[(int)InventoryItemType.AdvancedEquipment]++;
+            Changed?.Invoke();
+            GameEvents.RaiseInventoryChanged();
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastAdvancedEquipmentCrafted);
+            return true;
         }
     }
 }

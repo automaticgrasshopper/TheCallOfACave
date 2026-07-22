@@ -39,6 +39,7 @@ namespace TCC.Gameplay
         private Vector2 _knockbackDir;
         private float _wobblePhase;
         private bool _eliteSoldier;
+        private bool _advancedSoldier;
         private string _code;
         private DroppedFood _foodTarget;
         private Vector2 _facilityWanderTarget;
@@ -51,6 +52,12 @@ namespace TCC.Gameplay
         public CreatureRole Role => _role;
         public bool IsSoldier => _role == CreatureRole.Soldier;
         public bool IsEliteSoldier => IsSoldier && _eliteSoldier;
+        public bool IsAdvancedSoldier => IsSoldier && _advancedSoldier;
+        public float AttackPower => IsSoldier ? _cfg.soldierDamage * SoldierStatMultiplier
+            : _cfg.soldierDamage / Mathf.Max(1f, _cfg.civilianDamageDivisor);
+        public float Defense => IsSoldier ? _cfg.soldierDefense * SoldierStatMultiplier : 0f;
+        public float CombatHealth => IsSoldier ? Mathf.Max(0f, _combatHealth) : Mathf.Max(0f, _health);
+        public float CombatMaxHealth => IsSoldier ? SoldierMaxHealth : _cfg.healthMax;
         public bool IsFreeAdult => _stage == CreatureStage.Adult && _role == CreatureRole.Free;
         public bool IsWorking => _role == CreatureRole.FactoryWorker;
         public bool IsTraining => _role == CreatureRole.BarracksTrainee;
@@ -75,12 +82,17 @@ namespace TCC.Gameplay
                     : _role == CreatureRole.HospitalPatient ? LocalizationTable.Keys.RolePatient
                     : LocalizationTable.Keys.RoleFree;
                 string role = loc != null ? loc.Get(roleKey) : _role.ToString();
-                string format = loc != null ? loc.Get(LocalizationTable.Keys.CreatureInfo)
+                string format = loc != null ? loc.Get(IsSoldier
+                        ? LocalizationTable.Keys.SoldierInfo : LocalizationTable.Keys.CreatureInfo)
                     : "Bug {0}\nAge {1}%  Hunger {2}%\n{3}";
                 format = format.Replace("\\n", "\n");
-                return string.Format(format, _code,
-                    1 + Mathf.FloorToInt(_age / 5f),
-                    Mathf.RoundToInt(_hunger), role);
+                int age = 1 + Mathf.FloorToInt(_age / 5f);
+                int satiety = Mathf.RoundToInt(_hunger);
+                return IsSoldier
+                    ? string.Format(format, _code, age, satiety, role,
+                        Mathf.RoundToInt(AttackPower), Mathf.RoundToInt(Defense),
+                        Mathf.CeilToInt(CombatHealth), Mathf.RoundToInt(CombatMaxHealth))
+                    : string.Format(format, _code, age, satiety, role);
             }
         }
 
@@ -204,7 +216,7 @@ namespace TCC.Gameplay
             {
                 _attackTimer = _cfg.attackInterval;
                 float damage = IsSoldier
-                    ? _cfg.soldierDamage * (IsEliteSoldier ? _cfg.eliteSoldierMultiplier : 1f)
+                    ? AttackPower
                     : _cfg.soldierDamage / Mathf.Max(1f, _cfg.civilianDamageDivisor);
                 enemy.TakeDamage(damage);
             }
@@ -311,7 +323,7 @@ namespace TCC.Gameplay
 
         public bool TryEquipElite()
         {
-            if (!IsSoldier || _eliteSoldier)
+            if (!IsSoldier || _eliteSoldier || _advancedSoldier)
             {
                 ToastView.Instance?.Key(LocalizationTable.Keys.ToastEliteRequired);
                 return false;
@@ -324,8 +336,30 @@ namespace TCC.Gameplay
             return true;
         }
 
+        public bool TryEquipAdvanced()
+        {
+            if (!IsSoldier || _advancedSoldier)
+            {
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastAdvancedEquipmentRequired);
+                return false;
+            }
+            _advancedSoldier = true;
+            _eliteSoldier = false;
+            _age = _cfg.juvenileSeconds;
+            _stage = CreatureStage.Adult;
+            _infected = false;
+            _health = _cfg.healthMax;
+            _hunger = 100f;
+            _combatHealth = SoldierMaxHealth;
+            RefreshBaseSprite();
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastAdvancedEquipped);
+            return true;
+        }
+
         private float SoldierMaxHealth => _cfg.soldierMaxHealth *
-            (IsEliteSoldier ? _cfg.eliteSoldierMultiplier : 1f);
+            SoldierStatMultiplier;
+        private float SoldierStatMultiplier => IsAdvancedSoldier ? _cfg.advancedSoldierMultiplier
+            : IsEliteSoldier ? _cfg.eliteSoldierMultiplier : 1f;
 
         public void AssignTo(ColonyFacility facility, CreatureRole role)
         {
@@ -402,7 +436,7 @@ namespace TCC.Gameplay
                 Die();
                 return;
             }
-            if (IsSoldier) _combatHealth -= amount;
+            if (IsSoldier) _combatHealth -= Mathf.Max(1f, amount - Defense);
             else _health -= amount;
             _hitTimer = .22f;
             _knockbackDir = fromDirection.sqrMagnitude > .01f ? -fromDirection.normalized : Vector2.left;
@@ -452,6 +486,7 @@ namespace TCC.Gameplay
             else if (_hitTimer <= 0f) RefreshBaseSprite();
 
             Color baseColor = _infected ? new Color(.76f, .55f, .9f, 1f)
+                : IsAdvancedSoldier ? new Color(.75f, .52f, 1f, 1f)
                 : IsEliteSoldier ? new Color(1f, .84f, .42f, 1f) : Color.white;
             _sr.color = _hitTimer > 0f ? new Color(1f, .3f, .25f, 1f) : baseColor;
         }

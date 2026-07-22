@@ -31,6 +31,7 @@ namespace TCC.Gameplay
         {
             if (_creature == null || _canvas == null || !_canvas.enabled) return;
             _text.text = _creature.InfoText;
+            _panelRect.sizeDelta = new Vector2(460f, _creature.IsSoldier ? 344f : 224f);
             PositionNearPointer();
         }
 
@@ -41,9 +42,11 @@ namespace TCC.Gameplay
                 canvasRect, Input.mousePosition, null, out Vector2 local)) return;
 
             Vector2 size = canvasRect.rect.size;
-            Vector2 desired = local + new Vector2(238f, 128f);
+            float halfHeight = _panelRect.rect.height * .5f;
+            Vector2 desired = local + new Vector2(238f, halfHeight + 16f);
             desired.x = Mathf.Clamp(desired.x, -size.x * .5f + 230f, size.x * .5f - 230f);
-            desired.y = Mathf.Clamp(desired.y, -size.y * .5f + 116f, size.y * .5f - 116f);
+            desired.y = Mathf.Clamp(desired.y, -size.y * .5f + halfHeight,
+                size.y * .5f - halfHeight);
             _panelRect.anchoredPosition = desired;
         }
 

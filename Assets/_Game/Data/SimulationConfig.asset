@@ -54,6 +54,7 @@ MonoBehaviour:
   factoryLevel1SaleValue: 80
   factoryLevel2SaleValue: 130
   factoryLevel3SaleValue: 240
+  advancedEquipmentSaleValue: 480
   hospitalTreatmentSeconds: 5
   hospitalCombatHealPerSecond: 8
   academyTrainingSeconds: 10
@@ -62,6 +63,7 @@ MonoBehaviour:
   invasionWaveInterval: 45
   heavyEnemyStartSeconds: 300
   soldierMaxHealth: 100
+  soldierDefense: 3
   enemyMaxHealth: 110
   heavyEnemyMaxHealth: 330
   soldierDamage: 10
@@ -79,3 +81,4 @@ MonoBehaviour:
   heavyEnemyFacilityDamageMax: 30
   combatAgeMultiplier: 1.5
   eliteSoldierMultiplier: 2
+  advancedSoldierMultiplier: 2.5

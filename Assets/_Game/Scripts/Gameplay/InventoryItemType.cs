@@ -6,6 +6,10 @@ namespace TCC.Gameplay
         Food,
         MetalScrap,
         RefinedComponent,
-        EliteEquipment
+        EliteEquipment,
+        AdvancedPartA,
+        AdvancedPartB,
+        SpecialEnemyPart,
+        AdvancedEquipment
     }
 }

@@ -73,6 +73,42 @@ MonoBehaviour:
   - key: hud.equipment_core
     zh: '核心'
     en: 'CORE'
+  - key: hud.equipment_synthesis
+    zh: '两级合成：A+B → 装备 · 装备+特殊零件 → 高级装备'
+    en: 'TWO TIERS: A+B → GEAR · GEAR+SPECIAL → ADVANCED'
+  - key: hud.craft_equipment
+    zh: '合成装备'
+    en: 'ASSEMBLE'
+  - key: item.basic_part
+    zh: '初级零件'
+    en: 'Basic Part'
+  - key: item.intermediate_part
+    zh: '中级零件'
+    en: 'Intermediate Part'
+  - key: item.advanced_part_a
+    zh: '高级零件 A'
+    en: 'Advanced Part A'
+  - key: item.advanced_part_b
+    zh: '高级零件 B'
+    en: 'Advanced Part B'
+  - key: item.advanced_part_random
+    zh: '高级零件 A / B（随机）'
+    en: 'Advanced Part A / B (random)'
+  - key: item.special_enemy_part
+    zh: '特殊零件'
+    en: 'Special Enemy Part'
+  - key: item.elite_equipment
+    zh: '合成装备'
+    en: 'Assembled Equipment'
+  - key: item.advanced_equipment
+    zh: '高级装备'
+    en: 'Advanced Equipment'
+  - key: hud.advanced_synthesis
+    zh: '二级合成 · 合成装备 + 特殊零件'
+    en: 'TIER-2 ASSEMBLY · EQUIPMENT + SPECIAL PART'
+  - key: hud.craft_advanced_equipment
+    zh: '合成高级装备'
+    en: 'ADVANCED ASSEMBLY'
   - key: build.factory
     zh: '工厂\n{0} 金币'
     en: 'FACTORY\n{0} COINS'
@@ -103,9 +139,21 @@ MonoBehaviour:
   - key: creature.info
     zh: '代号：{0}\n年龄：{1} 岁\n饱腹：{2}%\n工种：{3}'
     en: 'Code: {0}\nAge: {1} years\nSatiety: {2}%\nRole: {3}'
+  - key: creature.soldier_info
+    zh: '代号：{0}\n年龄：{1} 岁\n饱腹：{2}%\n工种：{3}\n攻击：{4}\n防御：{5}\n生命：{6} / {7}'
+    en: 'Code: {0}\nAge: {1} years\nSatiety: {2}%\nRole: {3}\nAttack: {4}\nDefense: {5}\nHealth: {6} / {7}'
   - key: facility.info
     zh: '设施：{0}\n等级：{1}    容纳：{2} / {3}\n耐久：{4} / {5}'
     en: 'Facility: {0}\nLevel: {1}    Occupancy: {2} / {3}\nDurability: {4} / {5}'
+  - key: facility.factory_info
+    zh: '设施：{0}\n等级：{1}    容纳：{2} / {3}\n生成：{4}\n出售价格：{5}\n耐久：{6} / {7}'
+    en: 'Facility: {0}\nLevel: {1}    Occupancy: {2} / {3}\nProduces: {4}\nSale price: {5}\nDurability: {6} / {7}'
+  - key: facility.sale_coins
+    zh: '{0} 金币'
+    en: '{0} coins'
+  - key: facility.sale_equipment
+    zh: '{0} 金币（合成装备）'
+    en: '{0} coins (assembled equipment)'
   - key: facility.world_status
     zh: '{0}  ·  Lv.{1}  ·  {2}/{3}'
     en: '{0}  ·  Lv.{1}  ·  {2}/{3}'
@@ -211,6 +259,45 @@ MonoBehaviour:
   - key: toast.equipment_ready
     zh: '外骨骼装备已进入背包，可出售或拖给工兵'
     en: 'Exoskeleton stored; sell it or drag it onto a soldier'
+  - key: toast.advanced_part_a_ready
+    zh: '三级工厂产出高级零件 A'
+    en: 'Level-3 factory produced Advanced Part A'
+  - key: toast.advanced_part_b_ready
+    zh: '三级工厂产出高级零件 B'
+    en: 'Level-3 factory produced Advanced Part B'
+  - key: toast.craft_need_parts
+    zh: '需要高级零件 A 和 B 各1个才能合成'
+    en: 'Assembly requires one Advanced Part A and one Advanced Part B'
+  - key: toast.equipment_crafted
+    zh: '已合成装备'
+    en: 'Equipment assembled'
+  - key: toast.drag_equipment
+    zh: '把装备拖给工兵、拖到金币区出售，或放到地上'
+    en: 'Drag equipment to a soldier, the coin display to sell, or the ground to drop it'
+  - key: toast.equipment_dropped
+    zh: '装备已放在地上，点击可捡回背包'
+    en: 'Equipment dropped; click it to return it to the backpack'
+  - key: toast.equipment_picked_up
+    zh: '装备已捡回背包'
+    en: 'Equipment returned to the backpack'
+  - key: toast.craft_need_advanced_parts
+    zh: '需要1件合成装备和1个特殊零件'
+    en: 'Requires one assembled equipment and one special enemy part'
+  - key: toast.advanced_equipment_crafted
+    zh: '已合成高级装备'
+    en: 'Advanced equipment assembled'
+  - key: toast.basic_part_picked_up
+    zh: '已拾取初级零件'
+    en: 'Basic part collected'
+  - key: toast.special_part_picked_up
+    zh: '已拾取特殊零件'
+    en: 'Special enemy part collected'
+  - key: toast.advanced_equipment_required
+    zh: '高级装备只能用于尚未高级强化的士兵'
+    en: 'Advanced equipment requires a soldier not already advanced'
+  - key: toast.advanced_equipped
+    zh: '高级装备完成：士兵恢复刚成年状态并满血'
+    en: 'Advanced equipment fitted: soldier restored to newly adult age and full health'
   - key: toast.elite_equipped
     zh: '外骨骼适配完成：工兵生命与攻击翻倍'
     en: 'Exoskeleton fitted: soldier health and damage doubled'

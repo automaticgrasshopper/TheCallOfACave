@@ -20,7 +20,7 @@ One colony year equals **5 real-time seconds**. A normal bug lives for **36 colo
 | Later egg interval | 60 s | A free adult normally lays 1–2 eggs during adulthood. |
 | Factory level 1 production | 8 s per worker | Produces stackable scrap for steady opening income. |
 | Factory level 2 production | 7 s per worker | Produces higher-value refined components. |
-| Factory level 3 production | 12 s per worker | Produces sellable/equippable elite exoskeletons. |
+| Factory level 3 production | 12 s per worker | Randomly produces advanced part A or B for equipment synthesis. |
 | Soldier training | 10 s | Exactly two colony years. |
 | Hospital cure | 5 s | Infection remains dangerous but treatment fits the short loop. |
 | Academy training | 10 s | Doctor response can happen inside the same crisis. |
@@ -58,17 +58,18 @@ Time multipliers:
 
 ## Economy
 
-There is no passive income. An unhatched egg can be clicked and sold for 100 coins, trading future population for immediate funds. Factory cargo remains the primary renewable money source, so assigning adults to production sacrifices future eggs in exchange for economic growth. Purchased food and factory products enter the backpack; food becomes a loose world entity only when the player drags it out.
+There is no passive income. Eggs can be repositioned freely and continue incubating where released; only dragging one onto the coin display sells it for 100 coins. Factory cargo remains the primary renewable money source. Purchased food and factory products enter the backpack.
 
 | Item or action | Cost / reward |
 | --- | ---: |
 | Buy juvenile | 120 coins |
 | Buy one food | 30 coins |
-| Click and sell one unhatched egg | +100 coins |
+| Drag one unhatched egg to the coin display | +100 coins |
 | Drop one food | 1 food; the first bug to reach it restores 55 hunger and 35 health |
 | Sell level 1 metal scrap | +80 coins |
 | Sell level 2 refined component | +130 coins |
-| Sell level 3 elite equipment | +240 coins, or equip one soldier |
+| Sell assembled equipment by dragging it to coins | +240 coins |
+| Sell advanced equipment by dragging it to coins | +480 coins |
 | Train one doctor | 150 coins + 3 food |
 
 ### Economy pacing target
@@ -78,7 +79,7 @@ There is no passive income. An unhatched egg can be clicked and sold for 100 coi
 - Two healthy level-1 factory workers operating from 30 to 90 seconds produce about 14 scrap, worth roughly 1,120 coins.
 - That supports a barracks and hospital before the first invasion, or an academy-focused route, but does not fund every building and upgrade at once.
 - A single full-adult-stage level-1 worker can produce about 15 scrap / 1,200 coins. The same free adult would instead lay roughly 1–2 eggs.
-- Level 2 raises per-worker sale income from 10 to about 18.6 coins/second. Level 3 only raises it to 20 coins/second because its product also carries major combat utility.
+- Level 2 raises direct per-worker sale income from 10 to about 18.6 coins/second. Level 3 has no direct part sale: its A/B output feeds the two-tier equipment route, trading immediate income for combat power.
 
 ## Bug Life, Health, and Roles
 
@@ -88,7 +89,7 @@ There is no passive income. An unhatched egg can be clicked and sold for 100 coi
 | Adult | 30–150 s | 6–30 | Can breed or be assigned to a facility. |
 | Elder | 150–180 s | 30–36 | Uses the elder sprite and leaves pollution on death. |
 
-Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The 460×224 screen-space card is hidden by default and appears only while that bug is under the mouse. Its four lines show permanent code, integer colony age, satiety, and role. Age begins at 1 and rises by 1 every 5 real-time seconds. Satiety is a positive 0–100% value: higher means fuller, and eating raises it. The code is rolled once at spawn as two uppercase English letters plus three digits (for example `QF-027`) and never changes during that bug's life. Juveniles, unassigned adults, and elders use the Free role label.
+Every bug instantiates the reusable `CreatureInfoPanel.prefab`. Standard bugs show permanent code, integer colony age, satiety, and role. Soldier cards expand to show attack, defense, and current/maximum combat health. Age begins at 1 and rises by 1 every 5 real-time seconds. Satiety is a positive 0–100% value.
 
 - Health starts at 100.
 - Health 50–100 is green, 20–50 yellow, and below 20 red.
@@ -143,7 +144,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 
 - Level 1: one metal scrap every 8 seconds; click its backpack stack to sell for 80 coins.
 - Level 2: one refined component every 7 seconds; click its stack to sell for 130 coins.
-- Level 3: one elite exoskeleton every 12 seconds; click to sell for 240 coins or drag it onto a normal soldier.
+- Level 3: one random advanced part A or B every 12 seconds. One of each assembles standard equipment.
 - Below 20 health: production speed is halved at every level.
 - Factory assignment lasts through adulthood and uses the dedicated worker appearance. On reaching elder age, the worker automatically retires, exits the factory, and becomes Free.
 
@@ -157,7 +158,8 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 
 - Training takes 10 seconds / two colony years.
 - Completion creates a soldier with 100 combat health. Soldiers keep the normal lifespan and automatically retire as Free elders.
-- A level-3 factory exoskeleton can upgrade a soldier once. The elite soldier has 200 combat health and 20 damage, visually marked with a gold/teal equipment tint.
+- Advanced part A + B assembles standard equipment. Standard equipment can be sold for 240 coins or fitted to a soldier for 200 health and 20 attack.
+- Standard equipment + one heavy-enemy special part assembles advanced equipment. It restores a soldier to newly adult age, clears infection, fills satiety and combat health, and grants 250 health / 25 attack / 7.5 defense (2.5× base stats).
 
 ### Hospital
 
@@ -190,10 +192,11 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Heavy enemies do not appear during the first five minutes. The 315-second wave contains 3 normal robots and 1 heavy invader.
 - Later waves rise toward 5 normal robots. Heavy count grows from 1 to a maximum of 3, adding one roughly every 180 seconds after heavy enemies unlock.
 - Soldier and robot attack interval: 0.75 seconds.
-- Soldier: 100 combat health, 10 damage.
+- Soldier: 100 combat health, 10 attack, 3 defense. Defense subtracts from each incoming hit, with at least 1 damage always applied.
 - Robot: 110 health, 11 damage.
 - One soldier may win but is likely to die; two soldiers reliably defeat one robot.
-- Elite soldier: 200 combat health, 20 damage. One elite soldier can narrowly defeat two normal robots if it begins at full health.
+- Equipped soldier: 200 combat health, 20 attack, 6 defense.
+- Advanced-equipped soldier: 250 combat health, 25 attack, 7.5 defense, restored to newly adult age and full condition when equipped.
 - Heavy robot: 330 health, 22 damage, three times the normal enemy's visual size, and lower movement speed. It is intended for multiple soldiers or elite support.
 - A soldier ages ×1.5 while actively fighting.
 - Combat health reaching zero kills the soldier and produces pollution.
@@ -201,7 +204,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - A normal adult can fight automatically for 2 damage per strike, exactly one fifth of a standard soldier. Juveniles and elders die from a single enemy hit.
 - Level 1 / 2 / 3 facilities have 100 / 120 / 300 maximum durability. Normal enemies deal a random 5–15 facility damage per strike; heavy enemies deal 10–30.
 - A damaged facility restores 1% of its current level's maximum durability per second once no living enemy targets it. Depleting durability downgrades a level-2 or level-3 facility; depleting level 1 destroys the facility and releases every adult occupant as Free.
-- Enemy death never creates pollution.
+- Enemy death never creates pollution. Normal enemies drop one basic part; heavy enemies drop one special part. Both remain in the world until clicked into the backpack.
 
 ## Interaction Rules
 
@@ -216,8 +219,8 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Build, Research, Loadout, backpack, and economy HUD share one opaque right sidebar outside the battlefield. Research exposes Medical Doctor plus three reserved future-talent sockets; Loadout reserves armor, weapon, and core sockets.
 - The boot menu uses a full-screen cave illustration and a fixed English art logo. English hides the duplicate subtitle; every other locale displays only its own localized title below the logo.
 - Purchased food enters the backpack. Drag it to any world position to create a dropped-food entity. If dropped inside a facility, only occupants of that facility race for it; outside, hungry unassigned bugs within the sensing radius move toward it. The first arrival consumes it.
-- Factory products enter their matching stack. Click scrap, components, or equipment to sell one item.
-- Drag elite equipment onto an unupgraded soldier to consume it and double that soldier's combat health and attack.
+- The Equipment page has two three-cell recipes: A + B → equipment, then equipment + special part → advanced equipment. Successful crafting adds the result to the backpack and raises a toast.
+- Basic and intermediate parts sell on click. Drag either equipment tier to the coin display to sell, to a soldier to equip, or to the ground to drop it. Ground equipment is inert and returns to the backpack when clicked.
 - All player-facing text must exist in Chinese and English in `LocalizationTable`.
 
 ## Session Length and Content Horizon

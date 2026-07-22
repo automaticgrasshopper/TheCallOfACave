@@ -11,7 +11,7 @@ namespace TCC.Data
         public int startMoney = 300;
 
         [Header("Eggs")]
-        [Tooltip("Coins earned when an unhatched egg is clicked and sold.")]
+        [Tooltip("Coins earned when an unhatched egg is dragged to the coin display.")]
         public int eggSellValue = 100;
 
         // Legacy scene-bootstrap compatibility; the old passive LaborZone is

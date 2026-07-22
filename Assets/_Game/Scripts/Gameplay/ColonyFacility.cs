@@ -85,10 +85,27 @@ namespace TCC.Gameplay
                     : _type == FacilityType.Barracks ? LocalizationTable.Keys.ZoneBarracks
                     : _type == FacilityType.Hospital ? LocalizationTable.Keys.ZoneHospital
                     : LocalizationTable.Keys.ZoneAcademy;
+                if (_type == FacilityType.Factory)
+                {
+                    var cfg = SimulationManager.Exists ? SimulationManager.Instance.Config : null;
+                    string productKey = _level >= 3 ? LocalizationTable.Keys.ItemAdvancedPartRandom
+                        : _level == 2 ? LocalizationTable.Keys.ItemIntermediatePart
+                        : LocalizationTable.Keys.ItemBasicPart;
+                    int saleValue = cfg == null ? 0 : _level >= 3 ? cfg.factoryLevel3SaleValue
+                        : _level == 2 ? cfg.factoryLevel2SaleValue : cfg.factoryLevel1SaleValue;
+                    string saleKey = _level >= 3 ? LocalizationTable.Keys.FacilitySaleEquipment
+                        : LocalizationTable.Keys.FacilitySaleCoins;
+                    string sale = string.Format(loc.Get(saleKey), saleValue);
+                    string factoryFormat = loc.Get(LocalizationTable.Keys.FacilityFactoryInfo)
+                        .Replace("\\n", "\n");
+                    return string.Format(factoryFormat, loc.Get(typeKey), _level,
+                        OccupantCount, Capacity, loc.Get(productKey), sale,
+                        Mathf.CeilToInt(StructureHealth), Mathf.RoundToInt(MaxStructureHealth));
+                }
+
                 string format = loc.Get(LocalizationTable.Keys.FacilityInfo).Replace("\\n", "\n");
-                return string.Format(format, loc.Get(typeKey), _level,
-                    OccupantCount, Capacity, Mathf.CeilToInt(StructureHealth),
-                    Mathf.RoundToInt(MaxStructureHealth));
+                return string.Format(format, loc.Get(typeKey), _level, OccupantCount, Capacity,
+                    Mathf.CeilToInt(StructureHealth), Mathf.RoundToInt(MaxStructureHealth));
             }
         }
         public int Capacity => _type == FacilityType.Academy

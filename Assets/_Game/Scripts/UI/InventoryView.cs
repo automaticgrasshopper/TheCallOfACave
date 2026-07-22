@@ -58,7 +58,9 @@ namespace TCC.UI
             string path = type == InventoryItemType.Food ? "Art/Inventory/food_ration"
                 : type == InventoryItemType.MetalScrap ? "Art/Inventory/metal_scrap"
                 : type == InventoryItemType.RefinedComponent ? "Art/Inventory/refined_component"
-                : "Art/Inventory/elite_equipment";
+                : type == InventoryItemType.EliteEquipment ? "Art/Inventory/elite_equipment"
+                : type == InventoryItemType.AdvancedEquipment ? "Art/Inventory/elite_equipment"
+                : "Art/Inventory/refined_component";
             return Resources.Load<Sprite>(path);
         }
     }

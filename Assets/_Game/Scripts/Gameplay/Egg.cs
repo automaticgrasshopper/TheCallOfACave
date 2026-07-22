@@ -2,12 +2,13 @@ using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Managers;
+using TCC.UI;
 
 namespace TCC.Gameplay
 {
     /// <summary>
-    /// A colony egg. Leave it alone to hatch, or click it to sell it before
-    /// incubation completes.
+    /// A colony egg. Drag it anywhere to relocate its hatch point, or release it
+    /// over the coin display to sell it before incubation completes.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public class Egg : MonoBehaviour
@@ -18,6 +19,7 @@ namespace TCC.Gameplay
         private float _phase;
         private Vector3 _baseScale;
         private bool _consumed;
+        private bool _dragging;
         private static Sprite _pixelEggSprite;
         private static bool _pixelEggLoaded;
 
@@ -62,19 +64,40 @@ namespace TCC.Gameplay
             transform.localScale = _baseScale + new Vector3(wob, -wob, 0f) * _baseScale.x;
 
             _hatch -= Time.deltaTime;
-            if (_hatch <= 0f) Hatch();
+            if (_hatch <= 0f && !_dragging) Hatch();
         }
 
         private void OnMouseDown()
         {
             if (_consumed) return;
             if (GameManager.Exists && GameManager.Instance.State != GameState.Playing) return;
+            _dragging = true;
+        }
 
-            _consumed = true;
-            int value = EconomyManager.Exists ? EconomyManager.Instance.EggSellValue : 0;
-            GameEvents.RaiseEggCollected(value, transform.position);
-            if (_sim != null) _sim.RemoveEgg(this);
-            Destroy(gameObject);
+        private void OnMouseDrag()
+        {
+            if (!_dragging || Camera.main == null) return;
+            Vector3 screen = new Vector3(Input.mousePosition.x, Input.mousePosition.y,
+                -Camera.main.transform.position.z);
+            Vector2 world = Camera.main.ScreenToWorldPoint(screen);
+            if (_sim != null) world = _sim.ClampWorld(world);
+            transform.position = new Vector3(world.x, world.y, 0f);
+        }
+
+        private void OnMouseUp()
+        {
+            if (!_dragging || _consumed) return;
+            _dragging = false;
+            if (MoneyDropTarget.ContainsScreenPoint(Input.mousePosition))
+            {
+                _consumed = true;
+                int value = EconomyManager.Exists ? EconomyManager.Instance.EggSellValue : 0;
+                GameEvents.RaiseEggCollected(value, transform.position);
+                if (_sim != null) _sim.RemoveEgg(this);
+                Destroy(gameObject);
+                return;
+            }
+            if (_hatch <= 0f) Hatch();
         }
 
         private void Hatch()

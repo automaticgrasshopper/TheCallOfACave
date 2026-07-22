@@ -34,7 +34,12 @@ namespace TCC.UI
             {
                 _icon.sprite = icon;
                 _icon.enabled = occupied && icon != null;
-                _icon.color = Color.white;
+                _icon.color = type == InventoryItemType.AdvancedPartA
+                    ? new Color(.42f, .88f, 1f, 1f)
+                    : type == InventoryItemType.AdvancedPartB
+                        ? new Color(1f, .68f, .3f, 1f)
+                        : type == InventoryItemType.SpecialEnemyPart || type == InventoryItemType.AdvancedEquipment
+                            ? new Color(.78f, .48f, 1f, 1f) : Color.white;
             }
             if (_count != null) _count.text = occupied ? count.ToString() : string.Empty;
             if (_background != null)
@@ -49,12 +54,29 @@ namespace TCC.UI
                 ToastView.Instance?.Key(LocalizationTable.Keys.ToastDragFood);
                 return;
             }
+            if (_type == InventoryItemType.EliteEquipment || _type == InventoryItemType.AdvancedEquipment)
+            {
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastDragEquipment);
+                return;
+            }
+            if (_type == InventoryItemType.SpecialEnemyPart)
+            {
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastCraftNeedAdvancedParts);
+                return;
+            }
+            if (_type == InventoryItemType.AdvancedPartA || _type == InventoryItemType.AdvancedPartB)
+            {
+                ToastView.Instance?.Key(LocalizationTable.Keys.ToastCraftNeedParts);
+                return;
+            }
             InventoryManager.Instance.TrySellOne(_type);
         }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (!_occupied || (_type != InventoryItemType.Food && _type != InventoryItemType.EliteEquipment) || _icon == null)
+            if (!_occupied || (_type != InventoryItemType.Food &&
+                _type != InventoryItemType.EliteEquipment &&
+                _type != InventoryItemType.AdvancedEquipment) || _icon == null)
                 return;
             var canvas = GetComponentInParent<Canvas>();
             if (canvas == null) return;
@@ -81,6 +103,13 @@ namespace TCC.UI
             _dragGhost = null;
             if (!_occupied || !InventoryManager.Exists || Camera.main == null) return;
 
+            if ((_type == InventoryItemType.EliteEquipment || _type == InventoryItemType.AdvancedEquipment) &&
+                MoneyDropTarget.ContainsScreenPoint(eventData.position))
+            {
+                InventoryManager.Instance.TrySellOne(_type);
+                return;
+            }
+
             Vector3 screen = new Vector3(eventData.position.x, eventData.position.y,
                 -Camera.main.transform.position.z);
             Vector2 world = Camera.main.ScreenToWorldPoint(screen);
@@ -97,10 +126,21 @@ namespace TCC.UI
                 target = hit.GetComponent<Creature>();
                 if (target != null) break;
             }
-            if (target == null) return;
+            if (target != null)
+            {
+                bool applied = _type == InventoryItemType.AdvancedEquipment
+                    ? target.TryEquipAdvanced() : target.TryEquipElite();
+                if (applied) InventoryManager.Instance.TryRemove(_type);
+                return;
+            }
 
-            bool applied = _type == InventoryItemType.EliteEquipment && target.TryEquipElite();
-            if (applied) InventoryManager.Instance.TryRemove(_type);
+            if ((_type == InventoryItemType.EliteEquipment || _type == InventoryItemType.AdvancedEquipment) &&
+                (eventData.pointerCurrentRaycast.gameObject == null ||
+                 !EventSystem.current.IsPointerOverGameObject(eventData.pointerId)) &&
+                SimulationManager.Exists && SimulationManager.Instance.SpawnLooseEquipment(world, _type))
+            {
+                InventoryManager.Instance.TryRemove(_type);
+            }
         }
     }
 }

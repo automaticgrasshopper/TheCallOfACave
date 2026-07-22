@@ -51,7 +51,7 @@ namespace TCC.Core
         public static event Action<Vector2> EggLaid;
         public static void RaiseEggLaid(Vector2 pos) => EggLaid?.Invoke(pos);
 
-        /// <summary>An egg was clicked/collected for cash. Payload = coin value.</summary>
+        /// <summary>An egg was dragged to the coin display and sold. Payload = coin value.</summary>
         public static event Action<int, Vector2> EggCollected;
         public static void RaiseEggCollected(int value, Vector2 pos) => EggCollected?.Invoke(value, pos);
 
