@@ -18,6 +18,8 @@ namespace TCC.Data
         public float wanderChangeInterval = 1.8f;
 
         [Header("Life and health")]
+        [Tooltip("Each bug rolls a permanent lifespan inside this range when born.")]
+        public float lifespanMinSeconds = 160f;
         public float totalLifespanSeconds = 180f;
         public float juvenileSeconds = 30f;
         public float elderStartSeconds = 150f;
@@ -37,12 +39,17 @@ namespace TCC.Data
         [Tooltip("A prime adult lays one egg every this many seconds.")]
         public float eggLayIntervalSeconds = 60f;
         public float firstEggMinSeconds = 35f;
-        [Tooltip("An unsold egg hatches into a juvenile after this long.")]
-        public float eggHatchSeconds = 15f;
+        [Tooltip("Each egg rolls a permanent incubation duration inside this range.")]
+        public float eggHatchMinSeconds = 20f;
+        public float eggHatchMaxSeconds = 40f;
         [Tooltip("Cap on eggs on screen.")]
         public int maxEggs = 30;
         [Tooltip("Cap on live creatures.")]
         public int maxCreatures = 40;
+
+        [Header("Individual variation")]
+        [Range(0.5f, 1.5f)] public float productionEfficiencyMin = 0.9f;
+        [Range(0.5f, 1.5f)] public float productionEfficiencyMax = 1.1f;
 
         [Header("Stage scale (world units; ~0.68 ≈ 68px)")]
         public float infantScale = 0.52f;

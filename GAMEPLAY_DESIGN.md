@@ -6,16 +6,16 @@ A science-fiction pixel-art colony game about raising cave bugs in a barren unde
 
 ## Time Scale
 
-One colony year equals **5 real-time seconds**. A normal bug lives for **36 colony years / 180 real-time seconds / 3 minutes**.
+One colony year equals **5 real-time seconds**. Each bug permanently rolls a lifespan of **32–36 colony years / 160–180 real-time seconds** when it is born.
 
-| Fixed timer | Value | Design purpose |
+| Timer | Value | Design purpose |
 | --- | ---: | --- |
-| Egg incubation | 15 s | Opening eggs hatch before the first larvae mature. |
+| Egg incubation | random 20–40 s per egg | Desynchronizes births while preserving the setup window. |
 | Juvenile stage | 30 s | Ages 0–6. The player has a short setup window. |
-| Adult stage | 120 s | Ages 6–30. Main work, breeding and training window. |
-| Elder stage | 30 s | Ages 30–36. Final warning window before pollution-producing death. |
-| Normal lifespan | 180 s | Complete three-minute individual lifecycle. |
-| Health loss tick | 1 health / 2.5 s | 72 health lost over an untreated normal life. |
+| Adult stage | 100–120 s | Main work, breeding and training window; varies with lifespan. |
+| Elder stage | 30 s | Final warning window before pollution-producing death. |
+| Normal lifespan | random 160–180 s | 32–36 years, permanently rolled per individual. |
+| Health loss tick | 1 health / 2.5 s | 64–72 health lost over an untreated 160–180 second life. |
 | First egg delay | random 35–60 s after adulthood | Prevents synchronized population bursts. |
 | Later egg interval | 60 s | A free adult normally lays 1–2 eggs during adulthood. |
 | Factory level 1 production | 8 s per worker | Produces stackable scrap for steady opening income. |
@@ -51,7 +51,7 @@ Time multipliers:
 
 - 300 coins.
 - 3 juvenile bugs in the open nursery.
-- 2 eggs in the nursery; they hatch at 15 seconds.
+- 2 eggs in the nursery; each independently hatches after 20–40 seconds.
 - No adults and no food stock.
 - The factory begins as a fixed unbuilt site. Barracks, hospital, and medical academy do not exist until placed from the construction palette.
 - Quicksand and the sand-river hazard are not part of this version.
@@ -75,10 +75,11 @@ There is no passive income. Eggs can be repositioned freely and continue incubat
 ### Economy pacing target
 
 - Building the factory immediately leaves 200 coins.
-- The first 3 larvae mature at 30 seconds; the 2 opening eggs become adults at 45 seconds.
-- Two healthy level-1 factory workers operating from 30 to 90 seconds produce about 14 scrap, worth roughly 1,120 coins.
+- The first 3 larvae mature at 30 seconds; the 2 opening eggs become adults at 50–70 seconds (60 seconds on average).
+- Two healthy level-1 factory workers operating from 30 to 90 seconds produce about 15 scrap in expectation, worth roughly 1,200 coins; individual efficiency can shift the exact completion count.
 - That supports a barracks and hospital before the first invasion, or an academy-focused route, but does not fund every building and upgrade at once.
-- A single full-adult-stage level-1 worker can produce about 15 scrap / 1,200 coins. The same free adult would instead lay roughly 1–2 eggs.
+- A mean-lifespan level-1 worker has about 110 adult work seconds and produces about 13.75 scrap / 1,100 coins at average efficiency. Individual 90–110% efficiency changes the timing without changing the colony-wide expected production rate.
+- The same mean worker produces about 15.7 level-2 components / 2,043 coins, or about 9.2 level-3 A/B parts. Random A/B balance makes short runs uneven, but the long-run mean is about 4.6 standard-equipment pairs per worker.
 - Level 2 raises direct per-worker sale income from 10 to about 18.6 coins/second. Level 3 has no direct part sale: its A/B output feeds the two-tier equipment route, trading immediate income for combat power.
 
 ## Bug Life, Health, and Roles
@@ -86,10 +87,10 @@ There is no passive income. Eggs can be repositioned freely and continue incubat
 | Stage | Real time | Colony age | Rules |
 | --- | ---: | ---: | --- |
 | Juvenile | 0–30 s | 0–6 | Wanders; cannot work or train. |
-| Adult | 30–150 s | 6–30 | Can breed or be assigned to a facility. |
-| Elder | 150–180 s | 30–36 | Uses the elder sprite and leaves pollution on death. |
+| Adult | 30 s until final 30 s | 6 until 26–30 | Can breed or be assigned to a facility. |
+| Elder | final 30 s | final 6 years | Uses the elder sprite and leaves pollution on death. |
 
-Every bug instantiates the reusable `CreatureInfoPanel.prefab`. Standard bugs show permanent code, integer colony age, satiety, and role. Soldier cards expand to show attack, defense, and current/maximum combat health. Age begins at 1 and rises by 1 every 5 real-time seconds. Satiety is a positive 0–100% value.
+Every bug instantiates the reusable `CreatureInfoPanel.prefab`. Standard bugs show permanent code, integer colony age, satiety, role, and permanent production efficiency. Soldier cards expand to show attack, defense, and current/maximum combat health. Age begins at 1 and rises by 1 every 5 real-time seconds. Satiety is a positive 0–100% value. Each bug rolls 90–110% production efficiency once at birth; the mean is 100%, so population-level production speed is unchanged while individual workers differ.
 
 - Health starts at 100.
 - Health 50–100 is green, 20–50 yellow, and below 20 red.
@@ -104,7 +105,7 @@ Every bug instantiates the reusable `CreatureInfoPanel.prefab`. Standard bugs sh
 - Only an unassigned normal adult lays eggs.
 - Factory workers, soldiers, barracks trainees, hospital patients, and academy workers do not lay eggs.
 - First egg: 35–60 seconds after becoming adult; later eggs: every 60 seconds.
-- Eggs hatch after 15 seconds.
+- Each egg permanently rolls a 20–40 second incubation time when created.
 - Maximum live bugs: 40; maximum simultaneous eggs: 30.
 
 ## Disease and Pollution
@@ -157,7 +158,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 | 3 | 10 | 450 |
 
 - Training takes 10 seconds / two colony years.
-- Completion creates a soldier with 100 combat health. Soldiers keep the normal lifespan and automatically retire as Free elders.
+- Completion creates a soldier with 100 combat health. The trained soldier remains inside the barracks and occupies its slot until the player drags it out. Soldiers keep their individual lifespan and automatically retire as Free elders.
 - Advanced part A + B assembles standard equipment. Standard equipment can be sold for 240 coins or fitted to a soldier for 200 health and 20 attack.
 - Standard equipment + one heavy-enemy special part assembles advanced equipment. It restores a soldier to newly adult age, clears infection, fills satiety and combat health, and grants 250 health / 25 attack / 7.5 defense (2.5× base stats).
 
@@ -213,7 +214,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Every constructed facility has a readable world label in the form `TYPE · Lv.N · occupied/capacity`. Hover it to see a localized card with facility type, level, occupancy, and exact durability. A persistent world-space bar also shows durability at a glance.
 - Click the academy to start a doctor batch when its requirements are met.
 - Drag adults into facilities.
-- Factory workers remain assigned until retirement; hospital patients can be removed; trained soldiers are released from barracks.
+- Factory workers remain assigned until retirement; hospital patients can be removed; trained soldiers remain in the barracks until manually dragged out.
 - Soldiers and normal adults engage nearby enemies automatically; no separate right-side deployment flag is required.
 - The right-side backpack is a scrollable 3-column grid with a 3×3 visible window and 12 scene-authored slots. Empty slots show no phantom item icon.
 - Build, Research, Loadout, backpack, and economy HUD share one opaque right sidebar outside the battlefield. Research exposes Medical Doctor plus three reserved future-talent sockets; Loadout reserves armor, weapon, and core sockets.

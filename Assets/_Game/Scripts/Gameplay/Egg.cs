@@ -16,6 +16,7 @@ namespace TCC.Gameplay
         private SimulationManager _sim;
         private SimulationConfig _cfg;
         private float _hatch;
+        private float _hatchDuration;
         private float _phase;
         private Vector3 _baseScale;
         private bool _consumed;
@@ -32,7 +33,8 @@ namespace TCC.Gameplay
                 var renderer = GetComponent<SpriteRenderer>();
                 renderer.sprite = PixelEggSprite;
             }
-            _hatch = cfg.eggHatchSeconds;
+            _hatchDuration = Random.Range(cfg.eggHatchMinSeconds, cfg.eggHatchMaxSeconds);
+            _hatch = _hatchDuration;
             _phase = Random.value * Mathf.PI * 2f;
             _baseScale = transform.localScale;
         }
@@ -57,7 +59,7 @@ namespace TCC.Gameplay
         private void Update()
         {
             // juice: wobble that speeds up as hatching nears.
-            float t = 1f - Mathf.Clamp01(_hatch / Mathf.Max(0.01f, _cfg.eggHatchSeconds));
+            float t = 1f - Mathf.Clamp01(_hatch / Mathf.Max(0.01f, _hatchDuration));
             float freq = Mathf.Lerp(3f, 12f, t);
             float amp = Mathf.Lerp(0.03f, 0.12f, t);
             float wob = Mathf.Sin(Time.time * freq + _phase) * amp;

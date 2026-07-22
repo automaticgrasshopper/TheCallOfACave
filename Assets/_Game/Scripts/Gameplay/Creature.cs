@@ -24,6 +24,8 @@ namespace TCC.Gameplay
         private ColonyFacility _facility;
         private float _age;
         private float _lifespan;
+        private float _elderStartAge;
+        private float _productionEfficiency;
         private float _health;
         private float _hunger;
         private float _combatHealth;
@@ -58,6 +60,7 @@ namespace TCC.Gameplay
         public float Defense => IsSoldier ? _cfg.soldierDefense * SoldierStatMultiplier : 0f;
         public float CombatHealth => IsSoldier ? Mathf.Max(0f, _combatHealth) : Mathf.Max(0f, _health);
         public float CombatMaxHealth => IsSoldier ? SoldierMaxHealth : _cfg.healthMax;
+        public float ProductionEfficiency => _productionEfficiency;
         public bool IsFreeAdult => _stage == CreatureStage.Adult && _role == CreatureRole.Free;
         public bool IsWorking => _role == CreatureRole.FactoryWorker;
         public bool IsTraining => _role == CreatureRole.BarracksTrainee;
@@ -92,7 +95,8 @@ namespace TCC.Gameplay
                     ? string.Format(format, _code, age, satiety, role,
                         Mathf.RoundToInt(AttackPower), Mathf.RoundToInt(Defense),
                         Mathf.CeilToInt(CombatHealth), Mathf.RoundToInt(CombatMaxHealth))
-                    : string.Format(format, _code, age, satiety, role);
+                    : string.Format(format, _code, age, satiety, role,
+                        Mathf.RoundToInt(_productionEfficiency * 100f));
             }
         }
 
@@ -102,7 +106,10 @@ namespace TCC.Gameplay
             _cfg = cfg;
             _sr = GetComponent<SpriteRenderer>();
             _bars = GetComponent<WorldStatusBars>() ?? gameObject.AddComponent<WorldStatusBars>();
-            _lifespan = cfg.totalLifespanSeconds;
+            _lifespan = Random.Range(cfg.lifespanMinSeconds, cfg.totalLifespanSeconds);
+            float elderDuration = Mathf.Max(0f, cfg.totalLifespanSeconds - cfg.elderStartSeconds);
+            _elderStartAge = Mathf.Max(cfg.juvenileSeconds, _lifespan - elderDuration);
+            _productionEfficiency = Random.Range(cfg.productionEfficiencyMin, cfg.productionEfficiencyMax);
             _age = _lifespan * Mathf.Clamp01(ageFraction);
             _health = cfg.healthMax;
             _hunger = 100f;
@@ -160,6 +167,7 @@ namespace TCC.Gameplay
             }
 
             bool parked = _role == CreatureRole.FactoryWorker || _role == CreatureRole.BarracksTrainee
+                || (IsSoldier && _facility != null)
                 || _role == CreatureRole.HospitalPatient || _role == CreatureRole.AcademyWorker;
             bool acted = UpdateCombat(dt);
             if (!acted) acted = UpdateFoodSeeking(dt);
@@ -180,7 +188,7 @@ namespace TCC.Gameplay
 
         private CreatureStage StageForAge(float value)
             => value < _cfg.juvenileSeconds ? CreatureStage.Infant
-             : value < _cfg.elderStartSeconds ? CreatureStage.Adult
+             : value < _elderStartAge ? CreatureStage.Adult
              : CreatureStage.Elder;
 
         private void UpdateMovement(float dt)
@@ -300,7 +308,8 @@ namespace TCC.Gameplay
             _dragging = false;
             Vector2 pos = transform.position;
 
-            if (_role == CreatureRole.HospitalPatient && _facility != null && !_facility.Contains(pos))
+            if ((_role == CreatureRole.HospitalPatient || IsSoldier) &&
+                _facility != null && !_facility.Contains(pos))
                 _facility.TryRelease(this);
 
             var destination = _sim.FindFacilityAt(pos);
@@ -373,7 +382,7 @@ namespace TCC.Gameplay
         {
             if (_role == CreatureRole.HospitalPatient)
                 _role = _roleBeforeHospital == CreatureRole.Soldier ? CreatureRole.Soldier : CreatureRole.Free;
-            else _role = CreatureRole.Free;
+            else if (!IsSoldier) _role = CreatureRole.Free;
             _facility = null;
             RefreshBaseSprite();
             PickWander();
@@ -404,7 +413,6 @@ namespace TCC.Gameplay
 
         public void CompleteFacilitySoldierTraining()
         {
-            _facility = null;
             _role = CreatureRole.Soldier;
             _stage = CreatureStage.Adult;
             _combatHealth = _cfg.soldierMaxHealth;

@@ -31,7 +31,7 @@ namespace TCC.Gameplay
         {
             if (_creature == null || _canvas == null || !_canvas.enabled) return;
             _text.text = _creature.InfoText;
-            _panelRect.sizeDelta = new Vector2(460f, _creature.IsSoldier ? 344f : 224f);
+            _panelRect.sizeDelta = new Vector2(460f, _creature.IsSoldier ? 344f : 270f);
             PositionNearPointer();
         }
 

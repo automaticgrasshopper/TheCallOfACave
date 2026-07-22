@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   moveSpeed: 1
   wanderChangeInterval: 1.8
+  lifespanMinSeconds: 160
   totalLifespanSeconds: 180
   juvenileSeconds: 30
   elderStartSeconds: 150
@@ -30,9 +31,12 @@ MonoBehaviour:
   infectedAgeMultiplier: 2
   eggLayIntervalSeconds: 60
   firstEggMinSeconds: 35
-  eggHatchSeconds: 15
+  eggHatchMinSeconds: 20
+  eggHatchMaxSeconds: 40
   maxEggs: 30
   maxCreatures: 40
+  productionEfficiencyMin: 0.9
+  productionEfficiencyMax: 1.1
   infantScale: 0.52
   primeScale: 0.68
   elderScale: 0.62

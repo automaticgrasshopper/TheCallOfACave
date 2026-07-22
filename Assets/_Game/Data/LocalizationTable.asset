@@ -137,8 +137,8 @@ MonoBehaviour:
     zh: '把背包食物拖到洞穴中'
     en: 'Drag stored food into the cave'
   - key: creature.info
-    zh: '代号：{0}\n年龄：{1} 岁\n饱腹：{2}%\n工种：{3}'
-    en: 'Code: {0}\nAge: {1} years\nSatiety: {2}%\nRole: {3}'
+    zh: '代号：{0}\n年龄：{1} 岁\n饱腹：{2}%\n工种：{3}\n生产效率：{4}%'
+    en: 'Code: {0}\nAge: {1} years\nSatiety: {2}%\nRole: {3}\nProduction: {4}%'
   - key: creature.soldier_info
     zh: '代号：{0}\n年龄：{1} 岁\n饱腹：{2}%\n工种：{3}\n攻击：{4}\n防御：{5}\n生命：{6} / {7}'
     en: 'Code: {0}\nAge: {1} years\nSatiety: {2}%\nRole: {3}\nAttack: {4}\nDefense: {5}\nHealth: {6} / {7}'

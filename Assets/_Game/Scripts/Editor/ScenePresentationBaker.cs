@@ -981,17 +981,21 @@ namespace TCC.EditorTools
         {
             var go = Child(parent, name);
             go.transform.localPosition = position;
-            go.transform.localScale = Vector3.one * .18f;
+            go.transform.localScale = Vector3.one * .06f;
             var text = Component<TextMeshPro>(go);
             var loc = Object.FindObjectOfType<LocalizationManager>();
             if (loc != null && loc.Font != null) text.font = loc.Font;
-            text.fontSize = 3f;
+            text.fontSize = 32f;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 18f;
+            text.fontSizeMax = 32f;
             text.alignment = TextAlignmentOptions.Center;
             text.color = new Color(.68f, .67f, .6f, .9f);
             // Do not use outlineColor/outlineWidth here: TMP implements those by
             // reading Renderer.material, which creates leaked scene materials in edit mode.
             if (text.font != null) text.fontSharedMaterial = text.font.material;
             text.enableWordWrapping = false;
+            text.rectTransform.sizeDelta = new Vector2(56f, 7f);
             text.sortingOrder = 20;
             var staleShadow = go.GetComponent<UnityEngine.UI.Shadow>();
             if (staleShadow != null) Object.DestroyImmediate(staleShadow);

@@ -338,7 +338,8 @@ namespace TCC.Gameplay
                 if (slot.creature == null) { _slots.RemoveAt(i); continue; }
                 if (_type == FacilityType.Factory)
                 {
-                    float efficiency = slot.creature.IsCritical ? .5f : 1f;
+                    float efficiency = slot.creature.ProductionEfficiency *
+                        (slot.creature.IsCritical ? .5f : 1f);
                     slot.timer += Time.deltaTime * efficiency;
                     float interval = cfg.FactoryInterval(_level);
                     if (slot.timer >= interval)
@@ -349,15 +350,15 @@ namespace TCC.Gameplay
                 }
                 else if (_type == FacilityType.Barracks)
                 {
+                    if (slot.creature.IsSoldier) continue;
                     slot.timer += Time.deltaTime;
                     progressVisible = true;
                     bestProgress = Mathf.Max(bestProgress, slot.timer / cfg.soldierTrainingSeconds);
                     if (slot.timer >= cfg.soldierTrainingSeconds)
                     {
                         var creature = slot.creature;
-                        _slots.RemoveAt(i);
                         creature.CompleteFacilitySoldierTraining();
-                        creature.transform.position = Center + Vector2.right * (_radius + .4f);
+                        creature.transform.position = Center + Random.insideUnitCircle * (_radius * .32f);
                         ToastView.Instance?.Key(LocalizationTable.Keys.ToastSoldierReady);
                     }
                 }
@@ -465,15 +466,21 @@ namespace TCC.Gameplay
             EnsureWorldLabelBack();
             var localized = _label.GetComponent<LocalizedText>();
             if (localized != null) localized.enabled = false;
-            _label.fontSize = 3.2f;
+            // World-space TMP needs a normal SDF point size and a small transform
+            // scale. Tiny point sizes collapse into a few bright pixels under the
+            // Pixel Perfect Camera.
+            _label.fontSize = 32f;
+            _label.enableAutoSizing = true;
+            _label.fontSizeMin = 18f;
+            _label.fontSizeMax = 32f;
             _label.alignment = TextAlignmentOptions.Center;
             _label.color = new Color(.94f, .91f, .72f, 1f);
             _label.enableWordWrapping = false;
             _label.overflowMode = TextOverflowModes.Overflow;
             _label.raycastTarget = false;
             var rect = _label.rectTransform;
-            rect.sizeDelta = new Vector2(24f, 4f);
-            rect.localScale = Vector3.one * .18f;
+            rect.sizeDelta = new Vector2(56f, 7f);
+            rect.localScale = Vector3.one * .06f;
             RefreshWorldLabel();
         }
 
@@ -487,7 +494,7 @@ namespace TCC.Gameplay
             if (visible)
             {
                 _statusBack.transform.localPosition = new Vector3(0f, _radius + .48f, .01f);
-                _statusBack.transform.localScale = new Vector3(3.65f, .46f, 1f);
+                _statusBack.transform.localScale = new Vector3(3.4f, .42f, 1f);
             }
             if (!visible || !LocalizationManager.Exists) return;
             var loc = LocalizationManager.Instance;
