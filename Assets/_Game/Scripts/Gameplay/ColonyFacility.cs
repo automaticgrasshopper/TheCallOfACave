@@ -436,7 +436,10 @@ namespace TCC.Gameplay
             var child = transform.Find(name);
             var go = child != null ? child.gameObject : new GameObject(name);
             if (child == null) go.transform.SetParent(transform, false);
-            var renderer = go.GetComponent<SpriteRenderer>() ?? go.AddComponent<SpriteRenderer>();
+            var renderer = go.GetComponent<SpriteRenderer>();
+            // UnityEngine.Object can be a destroyed "fake null" after a domain reload;
+            // explicit Unity null comparison is required instead of ?? here.
+            if (renderer == null) renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = StatusPixel;
             renderer.color = color;
             renderer.sortingOrder = order;

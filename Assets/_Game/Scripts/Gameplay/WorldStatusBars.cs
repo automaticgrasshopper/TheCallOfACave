@@ -43,7 +43,8 @@ namespace TCC.Gameplay
             go.transform.localPosition = pos;
             go.transform.localRotation = Quaternion.identity;
             go.transform.localScale = new Vector3(.62f, .055f, 1f);
-            var sr = go.GetComponent<SpriteRenderer>() ?? go.AddComponent<SpriteRenderer>();
+            var sr = go.GetComponent<SpriteRenderer>();
+            if (sr == null) sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = Pixel;
             sr.color = color;
             sr.sortingOrder = order;
