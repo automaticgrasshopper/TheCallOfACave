@@ -6,8 +6,8 @@ using TCC.Managers;
 namespace TCC.Gameplay
 {
     /// <summary>
-    /// A colony egg. Eggs are population growth, not currency: they hatch after
-    /// the configured incubation time and cannot be sold by clicking.
+    /// A colony egg. Leave it alone to hatch, or click it to sell it before
+    /// incubation completes.
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public class Egg : MonoBehaviour
@@ -63,6 +63,18 @@ namespace TCC.Gameplay
 
             _hatch -= Time.deltaTime;
             if (_hatch <= 0f) Hatch();
+        }
+
+        private void OnMouseDown()
+        {
+            if (_consumed) return;
+            if (GameManager.Exists && GameManager.Instance.State != GameState.Playing) return;
+
+            _consumed = true;
+            int value = EconomyManager.Exists ? EconomyManager.Instance.EggSellValue : 0;
+            GameEvents.RaiseEggCollected(value, transform.position);
+            if (_sim != null) _sim.RemoveEgg(this);
+            Destroy(gameObject);
         }
 
         private void Hatch()

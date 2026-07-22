@@ -10,6 +10,10 @@ namespace TCC.Data
         [Tooltip("Coins the player starts with.")]
         public int startMoney = 300;
 
+        [Header("Eggs")]
+        [Tooltip("Coins earned when an unhatched egg is clicked and sold.")]
+        public int eggSellValue = 100;
+
         // Legacy scene-bootstrap compatibility; the old passive LaborZone is
         // disabled by ScenePresentationBaker and pays nothing in the live game.
         [HideInInspector] public int laborIncomePerSec = 0;

@@ -15,6 +15,7 @@ namespace TCC.Managers
         [SerializeField] private EconomyConfig _config;
 
         public int Money { get; private set; }
+        public int EggSellValue => _config != null ? _config.eggSellValue : 0;
         public int Food => InventoryManager.Exists
             ? InventoryManager.Instance.Count(TCC.Gameplay.InventoryItemType.Food) : 0;
         public int BuyJuvenileCost => _config != null ? _config.buyJuvenileCost : 0;
@@ -29,12 +30,14 @@ namespace TCC.Managers
         private void OnEnable()
         {
             GameEvents.SpendRequested += OnSpendRequested;
+            GameEvents.EggCollected += OnEggCollected;
             GameEvents.MoneyEarned += OnMoneyEarned;
         }
 
         private void OnDisable()
         {
             GameEvents.SpendRequested -= OnSpendRequested;
+            GameEvents.EggCollected -= OnEggCollected;
             GameEvents.MoneyEarned -= OnMoneyEarned;
         }
 
@@ -95,5 +98,6 @@ namespace TCC.Managers
         }
 
         private void OnMoneyEarned(int amount) => Add(amount);
+        private void OnEggCollected(int value, Vector2 _) => Add(value);
     }
 }

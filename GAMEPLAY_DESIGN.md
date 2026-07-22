@@ -58,12 +58,13 @@ Time multipliers:
 
 ## Economy
 
-There is no passive income and eggs cannot be sold. Factory cargo is the primary money source, so assigning adults to production sacrifices future eggs in exchange for economic growth. Purchased food and factory products enter the backpack; food becomes a loose world entity only when the player drags it out.
+There is no passive income. An unhatched egg can be clicked and sold for 100 coins, trading future population for immediate funds. Factory cargo remains the primary renewable money source, so assigning adults to production sacrifices future eggs in exchange for economic growth. Purchased food and factory products enter the backpack; food becomes a loose world entity only when the player drags it out.
 
 | Item or action | Cost / reward |
 | --- | ---: |
 | Buy juvenile | 100 coins |
 | Buy one food | 30 coins |
+| Click and sell one unhatched egg | +100 coins |
 | Drop one food | 1 food; the first bug to reach it restores 55 hunger and 35 health |
 | Sell level 1 metal scrap | +80 coins |
 | Sell level 2 refined component | +130 coins |

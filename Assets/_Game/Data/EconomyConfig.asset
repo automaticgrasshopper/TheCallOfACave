@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: EconomyConfig
   m_EditorClassIdentifier:
   startMoney: 300
+  eggSellValue: 100
   laborIncomePerSec: 0
   buyJuvenileCost: 100
   buyFoodCost: 30
