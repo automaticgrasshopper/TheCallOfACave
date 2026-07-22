@@ -101,8 +101,8 @@ MonoBehaviour:
     zh: '把背包食物拖到洞穴中'
     en: 'Drag stored food into the cave'
   - key: creature.info
-    zh: '名字：洞虫 {0}\n年龄：{1}%\n饥饿：{2}%\n工种：{3}'
-    en: 'Name: Cave Bug {0}\nAge: {1}%\nHunger: {2}%\nRole: {3}'
+    zh: '代号：{0}\n年龄：{1}%\n饥饿：{2}%\n工种：{3}'
+    en: 'Code: {0}\nAge: {1}%\nHunger: {2}%\nRole: {3}'
   - key: role.free
     zh: '自由'
     en: 'Free'

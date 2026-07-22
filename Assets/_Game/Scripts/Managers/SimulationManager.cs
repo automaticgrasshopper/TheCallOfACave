@@ -39,7 +39,6 @@ namespace TCC.Managers
         private readonly List<ColonyFacility> _facilities = new List<ColonyFacility>(8);
         private float _invasionTimer;
         private int _waveIndex;
-        private int _nextCreatureIdentity = 1;
 
         public SimulationConfig Config => _config;
         public LaborZone Labor => _labor;
@@ -94,7 +93,6 @@ namespace TCC.Managers
             if (_creaturePrefab == null || _creatures.Count >= _config.maxCreatures) return null;
             var creature = Instantiate(_creaturePrefab, pos, Quaternion.identity, _worldRoot);
             creature.Init(this, _config, ageFraction);
-            creature.SetIdentity(_nextCreatureIdentity++);
             _creatures.Add(creature);
             if (notify) GameEvents.RaiseCreatureBorn(pos);
             BroadcastPopulation();

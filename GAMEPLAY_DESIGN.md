@@ -87,7 +87,7 @@ There is no passive income and eggs cannot be sold. Factory cargo is the primary
 | Adult | 30–150 s | 6–30 | Can breed or be assigned to a facility. |
 | Elder | 150–180 s | 30–36 | Uses the elder sprite and leaves pollution on death. |
 
-Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The card is hidden by default and appears only while that bug is under the mouse. Its four clearly separated lines show numbered name, age percentage, hunger percentage, and role. Juveniles, unassigned adults, and elders use the Free role label. Existing health and age bars remain; soldiers add a combat-health bar.
+Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The card is hidden by default and appears only while that bug is under the mouse. Its four clearly separated lines show a permanent code, age percentage, hunger percentage, and role. The code is rolled once at spawn as two uppercase English letters plus three digits (for example `QF-027`) and never changes during that bug's life. Juveniles, unassigned adults, and elders use the Free role label. Existing health and age bars remain; soldiers add a combat-health bar.
 
 - Health starts at 100.
 - Health 50–100 is green, 20–50 yellow, and below 20 red.

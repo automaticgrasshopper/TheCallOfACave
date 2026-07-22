@@ -39,7 +39,7 @@ namespace TCC.Gameplay
         private Vector2 _knockbackDir;
         private float _wobblePhase;
         private bool _eliteSoldier;
-        private int _identity;
+        private string _code;
         private DroppedFood _foodTarget;
         private Vector2 _facilityWanderTarget;
         private CreatureInfoPanel _infoPanel;
@@ -77,7 +77,7 @@ namespace TCC.Gameplay
                 string role = loc != null ? loc.Get(roleKey) : _role.ToString();
                 string format = loc != null ? loc.Get(LocalizationTable.Keys.CreatureInfo)
                     : "Bug {0}\nAge {1}%  Hunger {2}%\n{3}";
-                return string.Format(format, _identity.ToString("000"),
+                return string.Format(format, _code,
                     Mathf.RoundToInt(_age / Mathf.Max(1f, _cfg.totalLifespanSeconds) * 100f),
                     Mathf.RoundToInt((1f - Hunger01) * 100f), role);
             }
@@ -93,6 +93,7 @@ namespace TCC.Gameplay
             _age = _lifespan * Mathf.Clamp01(ageFraction);
             _health = cfg.healthMax;
             _hunger = 100f;
+            _code = GenerateCode();
             _combatHealth = cfg.soldierMaxHealth;
             _layTimer = Random.Range(cfg.firstEggMinSeconds, cfg.eggLayIntervalSeconds);
             _wobblePhase = Random.value * Mathf.PI * 2f;
@@ -111,7 +112,12 @@ namespace TCC.Gameplay
             _infoPanel.Init(this);
         }
 
-        public void SetIdentity(int identity) => _identity = identity;
+        private static string GenerateCode()
+        {
+            char first = (char)('A' + Random.Range(0, 26));
+            char second = (char)('A' + Random.Range(0, 26));
+            return string.Format("{0}{1}-{2:000}", first, second, Random.Range(0, 1000));
+        }
 
         private void Update()
         {
