@@ -207,7 +207,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 
 - Drag an unlocked facility card from the right construction page to a valid grid footprint to build it and pay its cost.
 - Shift-click a constructed facility to upgrade it.
-- Hover a constructed facility to see a localized card with its facility type, level, and exact durability. A persistent world-space bar also shows durability at a glance.
+- Every constructed facility has a readable world label in the form `TYPE · Lv.N · occupied/capacity`. Hover it to see a localized card with facility type, level, occupancy, and exact durability. A persistent world-space bar also shows durability at a glance.
 - Click the academy to start a doctor batch when its requirements are met.
 - Drag adults into facilities.
 - Factory workers remain assigned until retirement; hospital patients can be removed; trained soldiers are released from barracks.

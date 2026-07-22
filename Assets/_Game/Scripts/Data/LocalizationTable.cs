@@ -88,6 +88,11 @@ namespace TCC.Data
             public const string HintFeed = "hint.feed";
             public const string CreatureInfo = "creature.info";
             public const string FacilityInfo = "facility.info";
+            public const string FacilityWorldStatus = "facility.world_status";
+            public const string FacilityFactoryShort = "facility.short.factory";
+            public const string FacilityBarracksShort = "facility.short.barracks";
+            public const string FacilityHospitalShort = "facility.short.hospital";
+            public const string FacilityAcademyShort = "facility.short.academy";
             public const string RoleFree = "role.free";
             public const string RoleWorker = "role.worker";
             public const string RoleDoctor = "role.doctor";

@@ -74,7 +74,7 @@ namespace TCC.Gameplay
             _panelRect = (RectTransform)panel.transform;
             _panelRect.anchorMin = _panelRect.anchorMax = new Vector2(.5f, .5f);
             _panelRect.pivot = new Vector2(.5f, .5f);
-            _panelRect.sizeDelta = new Vector2(480f, 180f);
+            _panelRect.sizeDelta = new Vector2(520f, 218f);
             panel.GetComponent<Image>().color = new Color(.012f, .027f, .03f, .97f);
             var outline = panel.GetComponent<Outline>();
             outline.effectColor = new Color(.84f, .59f, .22f, .96f);
@@ -86,7 +86,7 @@ namespace TCC.Gameplay
             var textRect = (RectTransform)textObject.transform;
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(32f, 50f);
+            textRect.offsetMin = new Vector2(32f, 52f);
             textRect.offsetMax = new Vector2(-28f, -18f);
             _text = textObject.GetComponent<TextMeshProUGUI>();
             if (LocalizationManager.Exists && LocalizationManager.Instance.Font != null)

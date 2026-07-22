@@ -40,6 +40,7 @@ namespace TCC.Gameplay
         private bool _placementValid;
         private SpriteRenderer _healthBack;
         private SpriteRenderer _healthFill;
+        private SpriteRenderer _statusBack;
         private FacilityInfoPanel _infoPanel;
         private static Sprite _statusPixel;
 
@@ -64,6 +65,16 @@ namespace TCC.Gameplay
         }
         public float StructureHealthNormalized => MaxStructureHealth > 0f
             ? Mathf.Clamp01(StructureHealth / MaxStructureHealth) : 0f;
+        public int OccupantCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (var slot in _slots)
+                    if (slot.creature != null) count++;
+                return count;
+            }
+        }
         public string InfoText
         {
             get
@@ -76,7 +87,8 @@ namespace TCC.Gameplay
                     : LocalizationTable.Keys.ZoneAcademy;
                 string format = loc.Get(LocalizationTable.Keys.FacilityInfo).Replace("\\n", "\n");
                 return string.Format(format, loc.Get(typeKey), _level,
-                    Mathf.CeilToInt(StructureHealth), Mathf.RoundToInt(MaxStructureHealth));
+                    OccupantCount, Capacity, Mathf.CeilToInt(StructureHealth),
+                    Mathf.RoundToInt(MaxStructureHealth));
             }
         }
         public int Capacity => _type == FacilityType.Academy
@@ -86,6 +98,7 @@ namespace TCC.Gameplay
         private void Start()
         {
             if (IsBuilt) ResetStructureHealth();
+            ConfigureWorldLabel();
             EnsureHealthBar();
             var panelPrefab = Resources.Load<FacilityInfoPanel>("UI/FacilityInfoPanel");
             if (panelPrefab != null)
@@ -291,6 +304,7 @@ namespace TCC.Gameplay
             if (!IsBuilt || !SimulationManager.Exists) { SetProgress(0f, false); return; }
             Cleanup();
             var cfg = SimulationManager.Instance.Config;
+            RefreshWorldLabel();
             if (_structureHealth < MaxStructureHealth &&
                 !SimulationManager.Instance.IsFacilityThreatened(this))
             {
@@ -422,6 +436,55 @@ namespace TCC.Gameplay
             RefreshHealthBar();
         }
 
+        private string ShortNameKey => _type == FacilityType.Factory
+            ? LocalizationTable.Keys.FacilityFactoryShort
+            : _type == FacilityType.Barracks ? LocalizationTable.Keys.FacilityBarracksShort
+            : _type == FacilityType.Hospital ? LocalizationTable.Keys.FacilityHospitalShort
+            : LocalizationTable.Keys.FacilityAcademyShort;
+
+        private void ConfigureWorldLabel()
+        {
+            if (_label == null) return;
+            EnsureWorldLabelBack();
+            var localized = _label.GetComponent<LocalizedText>();
+            if (localized != null) localized.enabled = false;
+            _label.fontSize = 3.2f;
+            _label.alignment = TextAlignmentOptions.Center;
+            _label.color = new Color(.94f, .91f, .72f, 1f);
+            _label.enableWordWrapping = false;
+            _label.overflowMode = TextOverflowModes.Overflow;
+            _label.raycastTarget = false;
+            var rect = _label.rectTransform;
+            rect.sizeDelta = new Vector2(24f, 4f);
+            rect.localScale = Vector3.one * .18f;
+            RefreshWorldLabel();
+        }
+
+        private void RefreshWorldLabel()
+        {
+            if (_label == null) return;
+            EnsureWorldLabelBack();
+            bool visible = IsBuilt && !_placementPreview;
+            _label.gameObject.SetActive(visible);
+            _statusBack.enabled = visible;
+            if (visible)
+            {
+                _statusBack.transform.localPosition = new Vector3(0f, _radius + .48f, .01f);
+                _statusBack.transform.localScale = new Vector3(3.65f, .46f, 1f);
+            }
+            if (!visible || !LocalizationManager.Exists) return;
+            var loc = LocalizationManager.Instance;
+            _label.text = string.Format(loc.Get(LocalizationTable.Keys.FacilityWorldStatus),
+                loc.Get(ShortNameKey), _level, OccupantCount, Capacity);
+        }
+
+        private void EnsureWorldLabelBack()
+        {
+            if (_statusBack != null) return;
+            _statusBack = MakeHealthBarPart("Facility Status Back",
+                new Color(.018f, .034f, .035f, .94f), 19);
+        }
+
         private void EnsureHealthBar()
         {
             if (_healthFill != null) return;
@@ -528,12 +591,16 @@ namespace TCC.Gameplay
                 _level3Decor.color = new Color(1f, .76f, .27f, .96f);
             }
             if (_label != null)
-                _label.transform.localPosition = new Vector3(0f, _radius + .34f, 0f);
+                _label.transform.localPosition = new Vector3(0f, _radius + .48f, 0f);
             if (_progressBack != null)
                 _progressBack.transform.localPosition = new Vector3(0f, _radius + .14f, 0f);
             var collider = GetComponent<CircleCollider2D>();
             if (collider != null) collider.radius = _radius;
-            if (Application.isPlaying) RefreshHealthBar();
+            if (Application.isPlaying)
+            {
+                RefreshWorldLabel();
+                RefreshHealthBar();
+            }
         }
     }
 }
