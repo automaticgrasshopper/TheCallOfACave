@@ -33,11 +33,13 @@ namespace TCC.Managers
         private readonly List<Creature> _creatures = new List<Creature>(64);
         private readonly List<Egg> _eggs = new List<Egg>(32);
         private readonly List<EnemyRobot> _enemies = new List<EnemyRobot>(16);
+        private readonly List<DroppedFood> _foods = new List<DroppedFood>(24);
         private readonly List<ContaminationSource> _contaminations = new List<ContaminationSource>(32);
         private readonly List<MedicalDoctor> _doctors = new List<MedicalDoctor>(16);
         private readonly List<ColonyFacility> _facilities = new List<ColonyFacility>(8);
         private float _invasionTimer;
         private int _waveIndex;
+        private int _nextCreatureIdentity = 1;
 
         public SimulationConfig Config => _config;
         public LaborZone Labor => _labor;
@@ -92,6 +94,7 @@ namespace TCC.Managers
             if (_creaturePrefab == null || _creatures.Count >= _config.maxCreatures) return null;
             var creature = Instantiate(_creaturePrefab, pos, Quaternion.identity, _worldRoot);
             creature.Init(this, _config, ageFraction);
+            creature.SetIdentity(_nextCreatureIdentity++);
             _creatures.Add(creature);
             if (notify) GameEvents.RaiseCreatureBorn(pos);
             BroadcastPopulation();
@@ -160,6 +163,17 @@ namespace TCC.Managers
                 ? Instantiate(_contaminationPrefab, position, Quaternion.identity, _worldRoot)
                 : CreateEntity<ContaminationSource>("Contamination", "Art/ColonyV2/contamination_oil", 1.35f, position);
             _contaminations.Add(source);
+        }
+
+        public bool SpawnFood(Vector2 position)
+        {
+            position = ClampWorld(position);
+            var food = CreateEntity<DroppedFood>("Dropped Food", "Art/Inventory/food_ration", .62f, position);
+            var facility = FindFacilityAt(position);
+            food.Init(this, facility != null && facility.IsBuilt ? facility : null);
+            _foods.Add(food);
+            ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodDropped);
+            return true;
         }
 
         public void SpawnDoctor(Vector2 position, ColonyFacility home)
@@ -242,6 +256,45 @@ namespace TCC.Managers
             return best;
         }
 
+        public Creature ClosestCreature(Vector2 point)
+        {
+            Creature best = null; float distance = float.MaxValue;
+            foreach (var creature in _creatures)
+            {
+                if (creature == null || !creature.Alive) continue;
+                float d = (creature.Position - point).sqrMagnitude;
+                if (d < distance) { distance = d; best = creature; }
+            }
+            return best;
+        }
+
+        public ColonyFacility ClosestFacility(Vector2 point)
+        {
+            ColonyFacility best = null; float distance = float.MaxValue;
+            foreach (var facility in _facilities)
+            {
+                if (facility == null || !facility.CanBeAttacked) continue;
+                float d = (facility.Center - point).sqrMagnitude;
+                if (d < distance) { distance = d; best = facility; }
+            }
+            return best;
+        }
+
+        public DroppedFood ClosestFood(Creature creature, float radius)
+        {
+            _foods.RemoveAll(f => f == null || !f.Available);
+            DroppedFood best = null; float distance = radius * radius;
+            foreach (var food in _foods)
+            {
+                if (!food.CanBeClaimedBy(creature)) continue;
+                float d = (food.Position - creature.Position).sqrMagnitude;
+                // Food inside a facility is visible to every occupant, regardless of radius.
+                if (food.Facility == creature.Facility && food.Facility != null) d *= .01f;
+                if (d < distance) { distance = d; best = food; }
+            }
+            return best;
+        }
+
         public ContaminationSource ClosestContamination(Vector2 point)
         {
             _contaminations.RemoveAll(c => c == null);
@@ -255,6 +308,7 @@ namespace TCC.Managers
         }
 
         public void RemoveEnemy(EnemyRobot enemy) => _enemies.Remove(enemy);
+        public void RemoveFood(DroppedFood food) => _foods.Remove(food);
         public void RegisterFacility(ColonyFacility facility)
         {
             if (facility != null && !_facilities.Contains(facility)) _facilities.Add(facility);

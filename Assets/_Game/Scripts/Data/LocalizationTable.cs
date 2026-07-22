@@ -86,6 +86,13 @@ namespace TCC.Data
             public const string Pause = "btn.pause";
             public const string Resume = "btn.resume";
             public const string HintFeed = "hint.feed";
+            public const string CreatureInfo = "creature.info";
+            public const string RoleFree = "role.free";
+            public const string RoleWorker = "role.worker";
+            public const string RoleDoctor = "role.doctor";
+            public const string RoleSoldier = "role.soldier";
+            public const string RoleTrainee = "role.trainee";
+            public const string RolePatient = "role.patient";
             public const string GameOver = "state.gameover";
             public const string GameOverTitle = "gameover.title";
             public const string GameOverBody = "gameover.body";
@@ -101,6 +108,7 @@ namespace TCC.Data
             public const string ToastInsufficientFunds = "toast.insufficient_funds";
             public const string ToastFoodBought = "toast.food_bought";
             public const string ToastFoodUsed = "toast.food_used";
+            public const string ToastFoodDropped = "toast.food_dropped";
             public const string ToastNoFood = "toast.no_food";
             public const string ToastBuilt = "toast.built";
             public const string ToastUpgraded = "toast.upgraded";

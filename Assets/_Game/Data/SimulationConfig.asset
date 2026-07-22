@@ -21,6 +21,9 @@ MonoBehaviour:
   healthLossInterval: 2.5
   healthLossPerTick: 1
   foodHealing: 35
+  hungerLossPerSecond: 0.55
+  foodHungerRestore: 55
+  foodSenseRadius: 4
   criticalHealth: 20
   criticalAgeMultiplier: 2
   infectedHealthMultiplier: 2
@@ -65,5 +68,7 @@ MonoBehaviour:
   enemyDamage: 11
   heavyEnemyDamage: 22
   attackInterval: 0.75
+  civilianDamageDivisor: 5
+  facilityHealthPerLevel: 80
   combatAgeMultiplier: 1.5
   eliteSoldierMultiplier: 2

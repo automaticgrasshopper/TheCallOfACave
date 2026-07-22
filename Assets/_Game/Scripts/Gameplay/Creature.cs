@@ -25,6 +25,7 @@ namespace TCC.Gameplay
         private float _age;
         private float _lifespan;
         private float _health;
+        private float _hunger;
         private float _combatHealth;
         private float _layTimer;
         private float _wanderTimer;
@@ -33,12 +34,15 @@ namespace TCC.Gameplay
         private bool _dragging;
         private bool _dragMoved;
         private Vector2 _dragStart;
-        private bool _combatDeployed;
         private float _attackTimer;
         private float _hitTimer;
         private Vector2 _knockbackDir;
         private float _wobblePhase;
         private bool _eliteSoldier;
+        private int _identity;
+        private DroppedFood _foodTarget;
+        private Vector2 _facilityWanderTarget;
+        private CreatureInfoPanel _infoPanel;
 
         private static Sprite _infant, _adult, _worker, _elder, _soldier;
         private static Sprite[] _adultWalk, _soldierAttack;
@@ -53,7 +57,31 @@ namespace TCC.Gameplay
         public bool IsInfected => _infected;
         public bool IsCritical => _health < _cfg.criticalHealth;
         public float Health01 => _health / _cfg.healthMax;
+        public float Hunger01 => _hunger / 100f;
         public Vector2 Position => transform.position;
+        public ColonyFacility Facility => _facility;
+        public bool Alive => _health > 0f;
+        public bool CanEat => Alive && _hunger < 99.5f;
+
+        public string InfoText
+        {
+            get
+            {
+                var loc = LocalizationManager.Exists ? LocalizationManager.Instance : null;
+                string roleKey = _role == CreatureRole.FactoryWorker ? LocalizationTable.Keys.RoleWorker
+                    : _role == CreatureRole.Soldier ? LocalizationTable.Keys.RoleSoldier
+                    : _role == CreatureRole.AcademyWorker ? LocalizationTable.Keys.RoleDoctor
+                    : _role == CreatureRole.BarracksTrainee ? LocalizationTable.Keys.RoleTrainee
+                    : _role == CreatureRole.HospitalPatient ? LocalizationTable.Keys.RolePatient
+                    : LocalizationTable.Keys.RoleFree;
+                string role = loc != null ? loc.Get(roleKey) : _role.ToString();
+                string format = loc != null ? loc.Get(LocalizationTable.Keys.CreatureInfo)
+                    : "Bug {0}\nAge {1}%  Hunger {2}%\n{3}";
+                return string.Format(format, _identity.ToString("000"),
+                    Mathf.RoundToInt(_age / Mathf.Max(1f, _cfg.totalLifespanSeconds) * 100f),
+                    Mathf.RoundToInt((1f - Hunger01) * 100f), role);
+            }
+        }
 
         public void Init(SimulationManager sim, SimulationConfig cfg, float ageFraction)
         {
@@ -64,12 +92,26 @@ namespace TCC.Gameplay
             _lifespan = cfg.totalLifespanSeconds;
             _age = _lifespan * Mathf.Clamp01(ageFraction);
             _health = cfg.healthMax;
+            _hunger = 100f;
             _combatHealth = cfg.soldierMaxHealth;
             _layTimer = Random.Range(cfg.firstEggMinSeconds, cfg.eggLayIntervalSeconds);
             _wobblePhase = Random.value * Mathf.PI * 2f;
             PickWander();
             EnterStage(StageForAge(_age), true);
+            var cardPrefab = Resources.Load<CreatureInfoPanel>("UI/CreatureInfoPanel");
+            if (cardPrefab != null)
+                _infoPanel = Instantiate(cardPrefab, transform);
+            else
+            {
+                var cardObject = new GameObject("Creature Info Panel", typeof(CreatureInfoPanel));
+                cardObject.transform.SetParent(transform, false);
+                _infoPanel = cardObject.GetComponent<CreatureInfoPanel>();
+            }
+            _infoPanel.transform.localPosition = new Vector3(0f, 1.28f, 0f);
+            _infoPanel.Init(this);
         }
+
+        public void SetIdentity(int identity) => _identity = identity;
 
         private void Update()
         {
@@ -79,15 +121,14 @@ namespace TCC.Gameplay
                 * (IsCritical ? _cfg.criticalAgeMultiplier : 1f)
                 * (IsSoldier && IsInCombat() ? _cfg.combatAgeMultiplier : 1f);
             _age += dt * ageMultiplier;
+            _hunger = Mathf.Max(0f, _hunger - _cfg.hungerLossPerSecond * dt);
             _health = Mathf.Max(0f, _health - dt * (_cfg.healthLossPerTick / Mathf.Max(.1f, _cfg.healthLossInterval))
-                * (_infected ? _cfg.infectedHealthMultiplier : 1f));
+                * (_infected ? _cfg.infectedHealthMultiplier : 1f)
+                * Mathf.Lerp(.35f, 2.2f, 1f - Hunger01));
             if (_age >= _lifespan || _health <= 0f) { Die(); return; }
 
-            if (!IsSoldier)
-            {
-                CreatureStage next = StageForAge(_age);
-                if (next != _stage) EnterStage(next);
-            }
+            CreatureStage next = StageForAge(_age);
+            if (next != _stage) EnterStage(next);
 
             if (IsFreeAdult)
             {
@@ -101,9 +142,12 @@ namespace TCC.Gameplay
 
             bool parked = _role == CreatureRole.FactoryWorker || _role == CreatureRole.BarracksTrainee
                 || _role == CreatureRole.HospitalPatient || _role == CreatureRole.AcademyWorker;
-            if (!parked)
+            bool acted = UpdateCombat(dt);
+            if (!acted) acted = UpdateFoodSeeking(dt);
+            if (!acted)
             {
-                if (!UpdateCombat(dt)) UpdateMovement(dt);
+                if (parked && _facility != null) UpdateFacilityMovement(dt);
+                else UpdateMovement(dt);
             }
             if (_hitTimer > 0f)
             {
@@ -136,21 +180,60 @@ namespace TCC.Gameplay
 
         private bool UpdateCombat(float dt)
         {
-            if (!IsSoldier || !_combatDeployed) return false;
+            bool canFight = IsSoldier || _stage == CreatureStage.Adult;
+            if (!canFight) return false;
             var enemy = _sim.ClosestEnemy(transform.position);
             if (enemy == null) return false;
             Vector2 delta = enemy.Position - (Vector2)transform.position;
+            if (_facility != null && delta.sqrMagnitude > (_facility.Radius + .8f) * (_facility.Radius + .8f))
+                return false;
             if (delta.sqrMagnitude > .7f * .7f)
             {
-                transform.position = _sim.ClampWorld((Vector2)transform.position + delta.normalized * _cfg.moveSpeed * .95f * dt);
+                Vector2 next = (Vector2)transform.position + delta.normalized * _cfg.moveSpeed * .95f * dt;
+                transform.position = _facility != null ? _facility.ClampToInterior(next) : _sim.ClampWorld(next);
                 _sr.flipX = delta.x < 0f;
             }
             else if (_attackTimer <= 0f)
             {
                 _attackTimer = _cfg.attackInterval;
-                enemy.TakeDamage(_cfg.soldierDamage * (IsEliteSoldier ? _cfg.eliteSoldierMultiplier : 1f));
+                float damage = IsSoldier
+                    ? _cfg.soldierDamage * (IsEliteSoldier ? _cfg.eliteSoldierMultiplier : 1f)
+                    : _cfg.soldierDamage / Mathf.Max(1f, _cfg.civilianDamageDivisor);
+                enemy.TakeDamage(damage);
             }
             return true;
+        }
+
+        private bool UpdateFoodSeeking(float dt)
+        {
+            if (_foodTarget == null || !_foodTarget.CanBeClaimedBy(this))
+                _foodTarget = _sim.ClosestFood(this, _cfg.foodSenseRadius);
+            if (_foodTarget == null) return false;
+            Vector2 delta = _foodTarget.Position - (Vector2)transform.position;
+            if (delta.sqrMagnitude <= .3f * .3f)
+            {
+                _foodTarget.TryConsume(this);
+                _foodTarget = null;
+                return true;
+            }
+            Vector2 next = (Vector2)transform.position + delta.normalized * _cfg.moveSpeed * 1.12f * dt;
+            transform.position = _facility != null ? _facility.ClampToInterior(next) : _sim.ClampWorld(next);
+            _sr.flipX = delta.x < 0f;
+            return true;
+        }
+
+        private void UpdateFacilityMovement(float dt)
+        {
+            if ((_facilityWanderTarget - (Vector2)transform.position).sqrMagnitude < .08f * .08f || _wanderTimer <= 0f)
+            {
+                _facilityWanderTarget = _facility.Center + Random.insideUnitCircle * (_facility.Radius * .38f);
+                _wanderTimer = _cfg.wanderChangeInterval * Random.Range(.7f, 1.4f);
+            }
+            _wanderTimer -= dt;
+            Vector2 delta = _facilityWanderTarget - (Vector2)transform.position;
+            transform.position = _facility.ClampToInterior((Vector2)transform.position
+                + delta.normalized * _cfg.moveSpeed * .38f * dt);
+            if (Mathf.Abs(delta.x) > .01f) _sr.flipX = delta.x < 0f;
         }
 
         private bool IsInCombat()
@@ -166,6 +249,9 @@ namespace TCC.Gameplay
         }
 
         private bool CanInteract => !GameManager.Exists || GameManager.Instance.State == GameState.Playing;
+
+        private void OnMouseEnter() => _infoPanel?.SetVisible(true);
+        private void OnMouseExit() => _infoPanel?.SetVisible(false);
 
         private void OnMouseDown()
         {
@@ -189,7 +275,6 @@ namespace TCC.Gameplay
             if (!_dragMoved)
             {
                 _dragging = false;
-                TryFeed();
                 return;
             }
             if (!_dragging) return;
@@ -204,25 +289,14 @@ namespace TCC.Gameplay
             {
                 if (destination.TryAssign(this)) return;
             }
-            if (IsSoldier && pos.x > .5f) _combatDeployed = true;
             transform.position = _sim.PushOutsideFacilities(_sim.ClampWorld(pos), _facility);
             PickWander();
         }
 
-        private void TryFeed()
+        public bool EatDroppedFood()
         {
-            if (!EconomyManager.Exists || !EconomyManager.Instance.TryConsumeFood(1))
-            {
-                ToastView.Instance?.Key(LocalizationTable.Keys.ToastNoFood);
-                return;
-            }
-            _health = Mathf.Min(_cfg.healthMax, _health + _cfg.foodHealing);
-            ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodUsed);
-        }
-
-        public bool ReceiveInventoryFood()
-        {
-            if (_health >= _cfg.healthMax) return false;
+            if (!CanEat) return false;
+            _hunger = Mathf.Min(100f, _hunger + _cfg.foodHungerRestore);
             _health = Mathf.Min(_cfg.healthMax, _health + _cfg.foodHealing);
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastFoodUsed);
             return true;
@@ -264,13 +338,35 @@ namespace TCC.Gameplay
             PickWander();
         }
 
+        public void RetireFromDuty()
+        {
+            _facility?.RemoveOccupant(this);
+            _facility = null;
+            _role = CreatureRole.Free;
+            _stage = CreatureStage.Elder;
+            _eliteSoldier = false;
+            RefreshBaseSprite();
+            PickWander();
+            _sim?.NotifyStageChanged();
+        }
+
+        public void EvictAsFreeAdult()
+        {
+            _facility = null;
+            _role = CreatureRole.Free;
+            _stage = StageForAge(_age);
+            if (_stage == CreatureStage.Soldier) _stage = CreatureStage.Adult;
+            _eliteSoldier = false;
+            RefreshBaseSprite();
+            PickWander();
+        }
+
         public void CompleteFacilitySoldierTraining()
         {
             _facility = null;
             _role = CreatureRole.Soldier;
-            _stage = CreatureStage.Soldier;
+            _stage = CreatureStage.Adult;
             _combatHealth = _cfg.soldierMaxHealth;
-            _lifespan = _age + Mathf.Max(1f, (_cfg.totalLifespanSeconds - _age) * _cfg.soldierRemainingLifeMultiplier);
             RefreshBaseSprite();
             _sim.NotifyStageChanged();
         }
@@ -294,11 +390,16 @@ namespace TCC.Gameplay
 
         public void TakeCombatDamage(float amount, Vector2 fromDirection)
         {
-            if (!IsSoldier) return;
-            _combatHealth -= amount;
+            if (_stage == CreatureStage.Infant || _stage == CreatureStage.Elder)
+            {
+                Die();
+                return;
+            }
+            if (IsSoldier) _combatHealth -= amount;
+            else _health -= amount;
             _hitTimer = .22f;
             _knockbackDir = fromDirection.sqrMagnitude > .01f ? -fromDirection.normalized : Vector2.left;
-            if (_combatHealth <= 0f) Die();
+            if ((IsSoldier && _combatHealth <= 0f) || (!IsSoldier && _health <= 0f)) Die();
         }
 
         public void PlayAttack() { if (IsSoldier) _attackTimer = .28f; }
@@ -307,6 +408,11 @@ namespace TCC.Gameplay
         private void EnterStage(CreatureStage stage, bool initial = false)
         {
             _stage = stage;
+            if (!initial && stage == CreatureStage.Elder && (_role == CreatureRole.FactoryWorker || IsSoldier))
+            {
+                RetireFromDuty();
+                return;
+            }
             RefreshBaseSprite();
             if (!initial) _sim?.NotifyStageChanged();
         }

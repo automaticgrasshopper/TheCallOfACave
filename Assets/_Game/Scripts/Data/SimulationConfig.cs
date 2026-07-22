@@ -25,6 +25,9 @@ namespace TCC.Data
         public float healthLossInterval = 2.5f;
         public float healthLossPerTick = 1f;
         public float foodHealing = 35f;
+        public float hungerLossPerSecond = 0.55f;
+        public float foodHungerRestore = 55f;
+        public float foodSenseRadius = 4f;
         public float criticalHealth = 20f;
         public float criticalAgeMultiplier = 2f;
         public float infectedHealthMultiplier = 2f;
@@ -90,6 +93,9 @@ namespace TCC.Data
         public float enemyDamage = 11f;
         public float heavyEnemyDamage = 22f;
         public float attackInterval = 0.75f;
+        [Tooltip("Untrained adults deal one fifth of a soldier's damage.")]
+        public float civilianDamageDivisor = 5f;
+        public float facilityHealthPerLevel = 80f;
         public float combatAgeMultiplier = 1.5f;
         public float eliteSoldierMultiplier = 2f;
 

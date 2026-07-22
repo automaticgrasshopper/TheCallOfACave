@@ -35,6 +35,7 @@ namespace TCC.Gameplay
 
         private readonly List<Slot> _slots = new List<Slot>(10);
         private float _academyTimer = -1f;
+        private float _structureHealth;
         private bool _placementPreview;
         private bool _placementValid;
 
@@ -45,9 +46,15 @@ namespace TCC.Gameplay
         public float ReservedHalfExtent => _reservedHalfExtent;
         public bool IsPlacementPreview => _placementPreview;
         public Vector2 Center => transform.position;
+        public bool CanBeAttacked => IsBuilt && !_placementPreview;
         public int Capacity => _type == FacilityType.Academy
             ? new[] { 0, 2, 4, 6 }[_level]
             : new[] { 0, 3, 5, 10 }[_level];
+
+        private void Start()
+        {
+            if (IsBuilt) ResetStructureHealth();
+        }
 
         public void Configure(FacilityType type, float radius, SpriteRenderer ring,
             SpriteRenderer core, SpriteRenderer progressBack, SpriteRenderer progressFill)
@@ -93,6 +100,7 @@ namespace TCC.Gameplay
         {
             _placementPreview = false;
             _level = 1;
+            ResetStructureHealth();
             var collider = GetComponent<Collider2D>();
             if (collider != null) collider.enabled = true;
             RefreshVisual();
@@ -126,10 +134,24 @@ namespace TCC.Gameplay
 
             _slots.Add(new Slot { creature = creature });
             creature.AssignTo(this, role);
-            creature.transform.position = Center + Random.insideUnitCircle * (_radius * .58f);
+            creature.transform.position = Center + Random.insideUnitCircle * (_radius * .32f);
             if (_type == FacilityType.Barracks)
                 ToastView.Instance?.Key(LocalizationTable.Keys.ToastTrainingStarted);
             return true;
+        }
+
+        public Vector2 ClampToInterior(Vector2 point)
+        {
+            Vector2 delta = point - Center;
+            float safeRadius = Mathf.Max(.2f, _radius * .48f);
+            return delta.sqrMagnitude > safeRadius * safeRadius
+                ? Center + delta.normalized * safeRadius
+                : point;
+        }
+
+        public void RemoveOccupant(Creature creature)
+        {
+            if (creature != null) _slots.RemoveAll(s => s.creature == creature);
         }
 
         public bool TryRelease(Creature creature)
@@ -165,6 +187,7 @@ namespace TCC.Gameplay
                 : eco.Config.academyBuildCost;
             if (!eco.TrySpend(cost)) { ToastView.Instance?.Key(LocalizationTable.Keys.ToastInsufficientFunds); return; }
             _level = 1;
+            ResetStructureHealth();
             RefreshVisual();
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastBuilt);
         }
@@ -187,6 +210,7 @@ namespace TCC.Gameplay
                 return;
             }
             _level++;
+            ResetStructureHealth();
             RefreshVisual();
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastUpgraded);
         }
@@ -294,6 +318,49 @@ namespace TCC.Gameplay
         }
 
         private void Cleanup() => _slots.RemoveAll(s => s.creature == null);
+
+        public void TakeDamage(float amount)
+        {
+            if (!CanBeAttacked || amount <= 0f) return;
+            _structureHealth -= amount;
+            if (_structureHealth > 0f) return;
+
+            _level--;
+            if (_level <= 0)
+            {
+                _level = 0;
+                foreach (var slot in _slots)
+                {
+                    if (slot.creature == null) continue;
+                    slot.creature.EvictAsFreeAdult();
+                    slot.creature.transform.position = Center + Random.insideUnitCircle * (_radius + .35f);
+                }
+                _slots.Clear();
+                _academyTimer = -1f;
+            }
+            else
+            {
+                while (_slots.Count > Capacity)
+                {
+                    int last = _slots.Count - 1;
+                    var creature = _slots[last].creature;
+                    _slots.RemoveAt(last);
+                    if (creature != null)
+                    {
+                        creature.EvictAsFreeAdult();
+                        creature.transform.position = Center + Vector2.down * (_radius + .35f);
+                    }
+                }
+            }
+            ResetStructureHealth();
+            RefreshVisual();
+        }
+
+        private void ResetStructureHealth()
+        {
+            var cfg = SimulationManager.Exists ? SimulationManager.Instance.Config : null;
+            _structureHealth = (cfg != null ? cfg.facilityHealthPerLevel : 80f) * Mathf.Max(1, _level);
+        }
 
         private void RefreshVisual()
         {

@@ -45,7 +45,7 @@ Time multipliers:
 - Infection: health loss ×2 and aging ×2.
 - Active soldier combat: aging ×1.5.
 - Multipliers stack.
-- Soldier training halves the bug's remaining lifespan on completion.
+- Factory workers and soldiers retire automatically when they reach the elder stage; retirement restores the Free role.
 
 ## Opening State
 
@@ -58,13 +58,13 @@ Time multipliers:
 
 ## Economy
 
-There is no passive income and eggs cannot be sold. Factory cargo is the primary money source, so assigning adults to production sacrifices future eggs in exchange for economic growth. Food and every factory product enter the backpack instead of appearing loose in the world.
+There is no passive income and eggs cannot be sold. Factory cargo is the primary money source, so assigning adults to production sacrifices future eggs in exchange for economic growth. Purchased food and factory products enter the backpack; food becomes a loose world entity only when the player drags it out.
 
 | Item or action | Cost / reward |
 | --- | ---: |
 | Buy juvenile | 100 coins |
 | Buy one food | 30 coins |
-| Feed one bug | 1 food; restores 35 health |
+| Drop one food | 1 food; the first bug to reach it restores 55 hunger and 35 health |
 | Sell level 1 metal scrap | +80 coins |
 | Sell level 2 refined component | +130 coins |
 | Sell level 3 elite equipment | +240 coins, or equip one soldier |
@@ -87,11 +87,12 @@ There is no passive income and eggs cannot be sold. Factory cargo is the primary
 | Adult | 30–150 s | 6–30 | Can breed or be assigned to a facility. |
 | Elder | 150–180 s | 30–36 | Uses the elder sprite and leaves pollution on death. |
 
-Every bug has world-space health and age bars. Soldiers add a combat-health bar.
+Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The card is hidden by default and appears only while that bug is under the mouse. Its four clearly separated lines show numbered name, age percentage, hunger percentage, and role. Juveniles, unassigned adults, and elders use the Free role label. Existing health and age bars remain; soldiers add a combat-health bar.
 
 - Health starts at 100.
 - Health 50–100 is green, 20–50 yellow, and below 20 red.
-- Clicking a bug consumes one stored food and heals 35 health.
+- Hunger rises continuously. Low satiety accelerates passive health loss.
+- Food is never applied directly to a bug. The first eligible bug to touch dropped food restores 55 hunger and 35 health.
 - Hits flash the bug red, shake it, and apply light knockback.
 - The nursery is only a spawn point. All unassigned juveniles, adults, elders, and soldiers wander over the complete map.
 - Constructed facilities are walls to autonomous bugs; the nursery remains open.
@@ -116,7 +117,7 @@ Every bug has world-space health and age bars. Soldiers add a combat-health bar.
 
 ## Facilities
 
-All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The academy instead trains **2 / 4 / 6 doctors per batch**. Facilities are hollow perimeter compounds: bugs occupy the open courtyard rather than disappearing into a solid building.
+All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The academy instead trains **2 / 4 / 6 doctors per batch**. Facilities are hollow perimeter compounds: assigned bugs wander inside the central 48% of the courtyard radius and do not hug the walls.
 
 ### Construction grid and footprint
 
@@ -143,7 +144,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Level 2: one refined component every 7 seconds; click its stack to sell for 130 coins.
 - Level 3: one elite exoskeleton every 12 seconds; click to sell for 240 coins or drag it onto a normal soldier.
 - Below 20 health: production speed is halved at every level.
-- Factory assignment is permanent and uses the dedicated worker appearance.
+- Factory assignment lasts through adulthood and uses the dedicated worker appearance. On reaching elder age, the worker automatically retires, exits the factory, and becomes Free.
 
 ### Barracks
 
@@ -154,7 +155,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 | 3 | 10 | 450 |
 
 - Training takes 10 seconds / two colony years.
-- Completion halves remaining lifespan and creates a soldier with 100 combat health.
+- Completion creates a soldier with 100 combat health. Soldiers keep the normal lifespan and automatically retire as Free elders.
 - A level-3 factory exoskeleton can upgrade a soldier once. The elite soldier has 200 combat health and 20 damage, visually marked with a gold/teal equipment tint.
 
 ### Hospital
@@ -195,6 +196,10 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Heavy robot: 330 health, 22 damage, three times the normal enemy's visual size, and lower movement speed. It is intended for multiple soldiers or elite support.
 - A soldier ages ×1.5 while actively fighting.
 - Combat health reaching zero kills the soldier and produces pollution.
+- Every enemy continuously attacks the nearest visible valid target, whether that target is a bug or a constructed facility.
+- A normal adult can fight automatically for 2 damage per strike, exactly one fifth of a standard soldier. Juveniles and elders die from a single enemy hit.
+- Each facility level has structural health. Depleting it downgrades a level-2 or level-3 facility; depleting level 1 destroys the facility and releases every adult occupant as Free.
+- Enemy death never creates pollution.
 
 ## Interaction Rules
 
@@ -202,12 +207,12 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Shift-click a constructed facility to upgrade it.
 - Click the academy to start a doctor batch when its requirements are met.
 - Drag adults into facilities.
-- Factory workers are locked in; hospital patients can be removed; trained soldiers are released from barracks.
-- Drag a soldier to the right side to deploy it for automatic combat.
+- Factory workers remain assigned until retirement; hospital patients can be removed; trained soldiers are released from barracks.
+- Soldiers and normal adults engage nearby enemies automatically; no separate right-side deployment flag is required.
 - The right-side backpack is a scrollable 3-column grid with a 3×3 visible window and 12 scene-authored slots. Empty slots show no phantom item icon.
 - Build, Research, Loadout, backpack, and economy HUD share one opaque right sidebar outside the battlefield. Research exposes Medical Doctor plus three reserved future-talent sockets; Loadout reserves armor, weapon, and core sockets.
 - The boot menu uses a full-screen cave illustration and a fixed English art logo. English hides the duplicate subtitle; every other locale displays only its own localized title below the logo.
-- Purchased food enters the backpack. Drag food onto a damaged bug to heal it; direct bug-click feeding remains as a convenience shortcut and consumes the same stored item.
+- Purchased food enters the backpack. Drag it to any world position to create a dropped-food entity. If dropped inside a facility, only occupants of that facility race for it; outside, hungry unassigned bugs within the sensing radius move toward it. The first arrival consumes it.
 - Factory products enter their matching stack. Click scrap, components, or equipment to sell one item.
 - Drag elite equipment onto an unupgraded soldier to consume it and double that soldier's combat health and attack.
 - All player-facing text must exist in Chinese and English in `LocalizationTable`.

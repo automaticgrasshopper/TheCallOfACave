@@ -84,6 +84,12 @@ namespace TCC.UI
             Vector3 screen = new Vector3(eventData.position.x, eventData.position.y,
                 -Camera.main.transform.position.z);
             Vector2 world = Camera.main.ScreenToWorldPoint(screen);
+            if (_type == InventoryItemType.Food)
+            {
+                if (SimulationManager.Exists && SimulationManager.Instance.SpawnFood(world))
+                    InventoryManager.Instance.TryRemove(_type);
+                return;
+            }
             var hits = Physics2D.OverlapPointAll(world);
             Creature target = null;
             foreach (var hit in hits)
@@ -93,9 +99,7 @@ namespace TCC.UI
             }
             if (target == null) return;
 
-            bool applied = _type == InventoryItemType.Food
-                ? target.ReceiveInventoryFood()
-                : _type == InventoryItemType.EliteEquipment && target.TryEquipElite();
+            bool applied = _type == InventoryItemType.EliteEquipment && target.TryEquipElite();
             if (applied) InventoryManager.Instance.TryRemove(_type);
         }
     }

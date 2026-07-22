@@ -9,7 +9,8 @@ namespace TCC.Gameplay
         private SimulationManager _sim;
         private float _health;
         private float _attackTimer;
-        private Creature _target;
+        private Creature _creatureTarget;
+        private ColonyFacility _facilityTarget;
         [SerializeField] private bool _heavy;
         public Vector2 Position => transform.position;
         public bool Alive => _health > 0f;
@@ -24,25 +25,41 @@ namespace TCC.Gameplay
         private void Update()
         {
             if (_sim == null || !Alive) return;
-            if (_target == null || !_target.IsSoldier) _target = _sim.ClosestSoldier(Position);
-            Vector2 destination = _target != null ? (Vector2)_target.transform.position : new Vector2(-8f, 0f);
+            SelectNearestTarget();
+            Vector2 destination = _creatureTarget != null ? _creatureTarget.Position
+                : _facilityTarget != null ? _facilityTarget.Center : new Vector2(-8f, 0f);
             Vector2 delta = destination - Position;
-            if (delta.sqrMagnitude > .7f * .7f)
+            float reach = _facilityTarget != null ? Mathf.Max(.7f, _facilityTarget.Radius * .72f) : .7f;
+            if (delta.sqrMagnitude > reach * reach)
             {
                 float speed = _heavy ? .48f : .72f;
                 transform.position = _sim.ClampWorld(Position + delta.normalized * speed * Time.deltaTime);
                 GetComponent<SpriteRenderer>().flipX = delta.x < 0f;
             }
-            else if (_target != null)
+            else if (_creatureTarget != null || _facilityTarget != null)
             {
                 _attackTimer -= Time.deltaTime;
                 if (_attackTimer <= 0f)
                 {
                     _attackTimer = _sim.Config.attackInterval;
                     float damage = _heavy ? _sim.Config.heavyEnemyDamage : _sim.Config.enemyDamage;
-                    _target.TakeCombatDamage(damage, delta.normalized);
+                    if (_creatureTarget != null) _creatureTarget.TakeCombatDamage(damage, delta.normalized);
+                    else _facilityTarget.TakeDamage(damage);
                 }
             }
+        }
+
+        private void SelectNearestTarget()
+        {
+            var creature = _sim.ClosestCreature(Position);
+            var facility = _sim.ClosestFacility(Position);
+            float creatureDistance = creature != null ? (creature.Position - Position).sqrMagnitude : float.MaxValue;
+            float facilityDistance = facility != null
+                ? Mathf.Max(0f, (facility.Center - Position).magnitude - facility.Radius)
+                : float.MaxValue;
+            facilityDistance *= facilityDistance;
+            _creatureTarget = creatureDistance <= facilityDistance ? creature : null;
+            _facilityTarget = _creatureTarget == null ? facility : null;
         }
 
         public void TakeDamage(float amount)

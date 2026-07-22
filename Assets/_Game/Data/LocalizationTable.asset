@@ -98,8 +98,29 @@ MonoBehaviour:
     zh: '继续'
     en: 'Resume'
   - key: hint.feed
-    zh: '按住左键拖拽投喂'
-    en: 'Hold & drag to feed'
+    zh: '把背包食物拖到洞穴中'
+    en: 'Drag stored food into the cave'
+  - key: creature.info
+    zh: '名字：洞虫 {0}\n年龄：{1}%\n饥饿：{2}%\n工种：{3}'
+    en: 'Name: Cave Bug {0}\nAge: {1}%\nHunger: {2}%\nRole: {3}'
+  - key: role.free
+    zh: '自由'
+    en: 'Free'
+  - key: role.worker
+    zh: '工人'
+    en: 'Worker'
+  - key: role.doctor
+    zh: '博士'
+    en: 'Doctor'
+  - key: role.soldier
+    zh: '士兵'
+    en: 'Soldier'
+  - key: role.trainee
+    zh: '士兵学员'
+    en: 'Trainee'
+  - key: role.patient
+    zh: '病患'
+    en: 'Patient'
   - key: state.gameover
     zh: '全灭了…'
     en: 'All gone...'
@@ -137,8 +158,8 @@ MonoBehaviour:
     zh: '食物已入库'
     en: 'Food added to storage'
   - key: toast.food_used
-    zh: '已投喂，健康正在恢复'
-    en: 'Fed: health restored'
+    zh: '食物被抢到了，饥饿与健康得到恢复'
+    en: 'Food claimed: hunger and health restored'
   - key: toast.no_food
     zh: '食物不足'
     en: 'Not enough food'
@@ -161,8 +182,11 @@ MonoBehaviour:
     zh: '物资已出售：+{0} 金币'
     en: 'Cargo sold: +{0} coins'
   - key: toast.drag_food
-    zh: '把食物拖到虫子身上进行投喂'
-    en: 'Drag food onto a bug to feed it'
+    zh: '把食物拖到场景任意位置，附近的虫子会来争抢'
+    en: 'Drop food anywhere; nearby bugs will race to claim it'
+  - key: toast.food_dropped
+    zh: '食物已放下，附近的虫子正在赶来'
+    en: 'Food dropped; nearby bugs are on their way'
   - key: toast.equipment_ready
     zh: '外骨骼装备已进入背包，可出售或拖给工兵'
     en: 'Exoskeleton stored; sell it or drag it onto a soldier'
