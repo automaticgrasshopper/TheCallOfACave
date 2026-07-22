@@ -87,7 +87,7 @@ There is no passive income and eggs cannot be sold. Factory cargo is the primary
 | Adult | 30–150 s | 6–30 | Can breed or be assigned to a facility. |
 | Elder | 150–180 s | 30–36 | Uses the elder sprite and leaves pollution on death. |
 
-Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The 460×224 screen-space card is hidden by default and appears only while that bug is under the mouse. Its four lines show permanent code, integer colony age, satiety, and role. Age begins at 1 and rises by 1 every 5 real-time seconds. Satiety is a positive 0–100 value: higher means fuller, and eating raises it. The code is rolled once at spawn as two uppercase English letters plus three digits (for example `QF-027`) and never changes during that bug's life. Juveniles, unassigned adults, and elders use the Free role label.
+Every standard bug instantiates the reusable `CreatureInfoPanel.prefab`. The 460×224 screen-space card is hidden by default and appears only while that bug is under the mouse. Its four lines show permanent code, integer colony age, satiety, and role. Age begins at 1 and rises by 1 every 5 real-time seconds. Satiety is a positive 0–100% value: higher means fuller, and eating raises it. The code is rolled once at spawn as two uppercase English letters plus three digits (for example `QF-027`) and never changes during that bug's life. Juveniles, unassigned adults, and elders use the Free role label.
 
 - Health starts at 100.
 - Health 50–100 is green, 20–50 yellow, and below 20 red.
