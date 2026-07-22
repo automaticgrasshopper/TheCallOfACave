@@ -35,7 +35,7 @@ namespace TCC.Managers
         private readonly List<EnemyRobot> _enemies = new List<EnemyRobot>(16);
         private readonly List<ContaminationSource> _contaminations = new List<ContaminationSource>(32);
         private readonly List<MedicalDoctor> _doctors = new List<MedicalDoctor>(16);
-        private ColonyFacility[] _facilities;
+        private readonly List<ColonyFacility> _facilities = new List<ColonyFacility>(8);
         private float _invasionTimer;
         private int _waveIndex;
 
@@ -43,6 +43,7 @@ namespace TCC.Managers
         public LaborZone Labor => _labor;
         public BarracksZone Barracks => _barracks;
         public Vector2 BirthCenterPosition => BirthCenter;
+        public float BirthRadius => _birthRadius;
         public IReadOnlyList<Creature> Creatures => _creatures;
         public int CreatureCount => _creatures.Count;
         public int EggCount => _eggs.Count;
@@ -51,7 +52,8 @@ namespace TCC.Managers
 
         private void Start()
         {
-            _facilities = FindObjectsOfType<ColonyFacility>(true);
+            _facilities.Clear();
+            _facilities.AddRange(FindObjectsOfType<ColonyFacility>(true));
             SpawnInitialPopulation();
             BroadcastPopulation();
         }
@@ -123,7 +125,6 @@ namespace TCC.Managers
 
         public ColonyFacility FindFacilityAt(Vector2 point)
         {
-            if (_facilities == null) _facilities = FindObjectsOfType<ColonyFacility>(true);
             foreach (var facility in _facilities)
                 if (facility != null && facility.Contains(point)) return facility;
             return null;
@@ -131,7 +132,6 @@ namespace TCC.Managers
 
         public Vector2 PushOutsideFacilities(Vector2 point, ColonyFacility allowed)
         {
-            if (_facilities == null) _facilities = FindObjectsOfType<ColonyFacility>(true);
             foreach (var facility in _facilities)
             {
                 if (facility == null || facility == allowed || !facility.IsBuilt) continue;
@@ -255,6 +255,10 @@ namespace TCC.Managers
         }
 
         public void RemoveEnemy(EnemyRobot enemy) => _enemies.Remove(enemy);
+        public void RegisterFacility(ColonyFacility facility)
+        {
+            if (facility != null && !_facilities.Contains(facility)) _facilities.Add(facility);
+        }
         public void NotifyStageChanged() => BroadcastPopulation();
         public void RemoveEgg(Egg egg) => _eggs.Remove(egg);
 

@@ -12,8 +12,14 @@ namespace TCC.UI
 
         public static void Apply(GameObject target, Color primary, Color accent)
         {
-            if (target.transform.Find(FrameName) != null) return;
-            var chrome = target.AddComponent<PixelChrome>();
+            var oldFrame = target.transform.Find(FrameName);
+            if (oldFrame != null)
+            {
+                if (Application.isPlaying) Destroy(oldFrame.gameObject);
+                else DestroyImmediate(oldFrame.gameObject);
+            }
+            var chrome = target.GetComponent<PixelChrome>();
+            if (chrome == null) chrome = target.AddComponent<PixelChrome>();
             chrome.Build(primary, accent);
         }
 
@@ -35,6 +41,9 @@ namespace TCC.UI
             Corner(root.transform, "TopRight", new Vector2(-5, -5), accent, 1, 1);
             Corner(root.transform, "BottomLeft", new Vector2(5, 5), accent, -1, -1);
             Corner(root.transform, "BottomRight", new Vector2(-5, 5), accent, 1, -1);
+            Notch(root.transform, "Left Notch", new Vector2(0f, .5f), new Vector2(3f, 18f), primary, false);
+            Notch(root.transform, "Right Notch", new Vector2(1f, .5f), new Vector2(3f, 18f), primary, true);
+            Notch(root.transform, "Top Signal", new Vector2(.5f, 1f), new Vector2(24f, 2f), accent, false);
         }
 
         private static void Bar(Transform parent, string name, Vector2 min, Vector2 max, Vector2 offsetMin, Vector2 offsetMax, Color color)
@@ -59,6 +68,21 @@ namespace TCC.UI
             rect.sizeDelta = new Vector2(8, 3);
             var image = go.GetComponent<Image>();
             image.color = color; image.raycastTarget = false;
+        }
+
+        private static void Notch(Transform parent, string name, Vector2 anchor, Vector2 size,
+            Color color, bool reverse)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = rect.anchorMax = anchor;
+            rect.pivot = anchor;
+            rect.anchoredPosition = reverse ? new Vector2(-1f, 0f) : new Vector2(1f, 0f);
+            rect.sizeDelta = size;
+            var image = go.GetComponent<Image>();
+            image.color = color;
+            image.raycastTarget = false;
         }
     }
 }

@@ -25,8 +25,11 @@ namespace TCC.Data
             {
                 switch (lang)
                 {
+                    case Language.ChineseSimplified: return string.IsNullOrEmpty(zh) ? en : zh;
                     case Language.English: return string.IsNullOrEmpty(en) ? zh : en;
-                    default: return zh;
+                    // Newly added non-Chinese locales must never leak Chinese while
+                    // their column is still being populated.
+                    default: return en;
                 }
             }
         }
@@ -62,6 +65,17 @@ namespace TCC.Data
             public const string HudBuy = "hud.buy";
             public const string HudBuyFood = "hud.buy_food";
             public const string HudInventory = "hud.inventory";
+            public const string HudBuild = "hud.build";
+            public const string HudCommand = "hud.command";
+            public const string HudTabBuild = "hud.tab_build";
+            public const string HudTabEquipment = "hud.tab_equipment";
+            public const string HudEquipmentReserved = "hud.equipment_reserved";
+            public const string HudEquipmentArmor = "hud.equipment_armor";
+            public const string HudEquipmentTool = "hud.equipment_tool";
+            public const string HudEquipmentCore = "hud.equipment_core";
+            public const string BuildBarracks = "build.barracks";
+            public const string BuildHospital = "build.hospital";
+            public const string BuildAcademy = "build.academy";
             public const string LanguageToggle = "btn.language";
             public const string Pause = "btn.pause";
             public const string Resume = "btn.resume";
@@ -93,6 +107,8 @@ namespace TCC.Data
             public const string ToastEliteEquipped = "toast.elite_equipped";
             public const string ToastEliteRequired = "toast.elite_required";
             public const string ToastHeavyInvasion = "toast.heavy_invasion";
+            public const string ToastDragToBuild = "toast.drag_to_build";
+            public const string ToastBuildBlocked = "toast.build_blocked";
             public const string ToastInfected = "toast.infected";
             public const string ToastCured = "toast.cured";
             public const string ToastInvasion = "toast.invasion";

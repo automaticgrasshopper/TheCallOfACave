@@ -4,6 +4,7 @@ using TCC.Core;
 using TCC.Data;
 using TCC.Managers;
 using TCC.UI;
+using TMPro;
 
 namespace TCC.Gameplay
 {
@@ -25,14 +26,24 @@ namespace TCC.Gameplay
         [SerializeField] private SpriteRenderer _core;
         [SerializeField] private SpriteRenderer _progressBack;
         [SerializeField] private SpriteRenderer _progressFill;
+        [SerializeField] private SpriteRenderer _reservedFootprint;
+        [SerializeField] private SpriteRenderer _level2Decor;
+        [SerializeField] private SpriteRenderer _level3Decor;
+        [SerializeField] private TMP_Text _label;
+        [SerializeField] private float _reservedHalfExtent = 2.2f;
+        [SerializeField] private float _maxVisualDiameter = 3.8f;
 
         private readonly List<Slot> _slots = new List<Slot>(10);
         private float _academyTimer = -1f;
+        private bool _placementPreview;
+        private bool _placementValid;
 
         public FacilityType Type => _type;
         public bool IsBuilt => _level > 0;
         public int Level => _level;
         public float Radius => _radius;
+        public float ReservedHalfExtent => _reservedHalfExtent;
+        public bool IsPlacementPreview => _placementPreview;
         public Vector2 Center => transform.position;
         public int Capacity => _type == FacilityType.Academy
             ? new[] { 0, 2, 4, 6 }[_level]
@@ -47,6 +58,43 @@ namespace TCC.Gameplay
             _core = core;
             _progressBack = progressBack;
             _progressFill = progressFill;
+            RefreshVisual();
+        }
+
+        public void ConfigurePresentation(SpriteRenderer footprint, TMP_Text label,
+            SpriteRenderer level2Decor = null, SpriteRenderer level3Decor = null,
+            float reservedHalfExtent = 2.2f, float maxVisualDiameter = 3.8f)
+        {
+            _reservedFootprint = footprint;
+            _label = label;
+            _level2Decor = level2Decor;
+            _level3Decor = level3Decor;
+            _reservedHalfExtent = reservedHalfExtent;
+            _maxVisualDiameter = maxVisualDiameter;
+            RefreshVisual();
+        }
+
+        public void BeginPlacementPreview()
+        {
+            _placementPreview = true;
+            _placementValid = false;
+            var collider = GetComponent<Collider2D>();
+            if (collider != null) collider.enabled = false;
+            RefreshVisual();
+        }
+
+        public void SetPlacementValidity(bool valid)
+        {
+            _placementValid = valid;
+            RefreshVisual();
+        }
+
+        public void CommitPlacement()
+        {
+            _placementPreview = false;
+            _level = 1;
+            var collider = GetComponent<Collider2D>();
+            if (collider != null) collider.enabled = true;
             RefreshVisual();
         }
 
@@ -78,7 +126,7 @@ namespace TCC.Gameplay
 
             _slots.Add(new Slot { creature = creature });
             creature.AssignTo(this, role);
-            creature.transform.position = Center + Random.insideUnitCircle * (_radius * .42f);
+            creature.transform.position = Center + Random.insideUnitCircle * (_radius * .58f);
             if (_type == FacilityType.Barracks)
                 ToastView.Instance?.Key(LocalizationTable.Keys.ToastTrainingStarted);
             return true;
@@ -96,6 +144,7 @@ namespace TCC.Gameplay
 
         private void OnMouseDown()
         {
+            if (_placementPreview) return;
             if (GameManager.Exists && GameManager.Instance.State != GameState.Playing) return;
             if (!IsBuilt) { TryBuild(); return; }
             if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
@@ -248,18 +297,58 @@ namespace TCC.Gameplay
 
         private void RefreshVisual()
         {
-            if (_ring == null) _ring = GetComponent<SpriteRenderer>();
-            float alpha = IsBuilt ? .72f : .2f;
-            Color tint = _type == FacilityType.Factory ? new Color(.78f, .47f, .2f, alpha)
-                : _type == FacilityType.Barracks ? new Color(.24f, .64f, .68f, alpha)
-                : _type == FacilityType.Hospital ? new Color(.32f, .72f, .55f, alpha)
-                : new Color(.7f, .72f, .52f, alpha);
-            if (_ring != null) _ring.color = tint;
+            var cfg = SimulationManager.Exists ? SimulationManager.Instance.Config
+                : FindObjectOfType<SimulationManager>()?.Config;
+            int displayLevel = _placementPreview ? 1 : Mathf.Max(1, _level);
+            _radius = cfg != null ? cfg.FacilityRadius(displayLevel)
+                : displayLevel >= 3 ? 1.9f : displayLevel == 2 ? 1.5f : 1.15f;
+            if (cfg != null) _reservedHalfExtent = cfg.buildingReservedHalfExtent;
+
+            Color accent = _type == FacilityType.Factory ? new Color(.88f, .55f, .2f, 1f)
+                : _type == FacilityType.Barracks ? new Color(.24f, .75f, .78f, 1f)
+                : _type == FacilityType.Hospital ? new Color(.34f, .86f, .54f, 1f)
+                : new Color(.86f, .75f, .35f, 1f);
+            if (_ring != null)
+            {
+                float visualScale = (_radius * 2f) / Mathf.Max(.1f, _maxVisualDiameter);
+                _ring.transform.localScale = Vector3.one * visualScale;
+                _ring.color = _placementPreview
+                    ? (_placementValid ? new Color(.62f, 1f, .76f, .84f) : new Color(1f, .38f, .3f, .78f))
+                    : new Color(1f, 1f, 1f, IsBuilt ? 1f : .28f);
+            }
             if (_core != null)
             {
-                _core.color = new Color(tint.r, tint.g, tint.b, IsBuilt ? .82f : .12f);
-                _core.transform.localScale = Vector3.one * (.18f + _level * .1f);
+                _core.enabled = IsBuilt || _placementPreview;
+                _core.color = new Color(accent.r, accent.g, accent.b,
+                    _placementPreview ? .42f : .12f + displayLevel * .08f);
+                _core.transform.localScale = Vector3.one * _radius;
             }
+            if (_reservedFootprint != null)
+            {
+                _reservedFootprint.enabled = _placementPreview;
+                _reservedFootprint.transform.localScale = new Vector3(
+                    _reservedHalfExtent * 2f, _reservedHalfExtent * 2f, 1f);
+                _reservedFootprint.color = _placementValid
+                    ? new Color(.15f, .82f, .55f, .12f) : new Color(1f, .18f, .12f, .16f);
+            }
+            if (_level2Decor != null)
+            {
+                _level2Decor.enabled = !_placementPreview && IsBuilt && displayLevel >= 2;
+                _level2Decor.transform.localScale = Vector3.one * _radius;
+                _level2Decor.color = new Color(accent.r, accent.g, accent.b, .92f);
+            }
+            if (_level3Decor != null)
+            {
+                _level3Decor.enabled = !_placementPreview && IsBuilt && displayLevel >= 3;
+                _level3Decor.transform.localScale = Vector3.one * _radius;
+                _level3Decor.color = new Color(1f, .76f, .27f, .96f);
+            }
+            if (_label != null)
+                _label.transform.localPosition = new Vector3(0f, _radius + .34f, 0f);
+            if (_progressBack != null)
+                _progressBack.transform.localPosition = new Vector3(0f, _radius + .14f, 0f);
+            var collider = GetComponent<CircleCollider2D>();
+            if (collider != null) collider.radius = _radius;
         }
     }
 }

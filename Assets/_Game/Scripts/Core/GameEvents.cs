@@ -38,6 +38,9 @@ namespace TCC.Core
         public static event Action<int> FoodChanged;
         public static void RaiseFoodChanged(int amount) => FoodChanged?.Invoke(amount);
 
+        public static event Action InventoryChanged;
+        public static void RaiseInventoryChanged() => InventoryChanged?.Invoke();
+
         // ---- Simulation facts (drive audio/UI/economy) --------------------
         public static event Action<Vector2> CreatureBorn;
         public static void RaiseCreatureBorn(Vector2 pos) => CreatureBorn?.Invoke(pos);

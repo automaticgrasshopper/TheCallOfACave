@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   entries:
   - key: game.title
-    zh: '洞穴之声'
-    en: 'The Call of A Cave'
+    zh: '洞穴的呼唤'
+    en: 'THE CALL OF THE CAVE'
   - key: hud.money
     zh: '金币：{0}'
     en: 'Coins: {0}'
@@ -37,6 +37,39 @@ MonoBehaviour:
   - key: hud.inventory
     zh: '物资背包 · 3×N'
     en: 'CARGO · 3×N'
+  - key: hud.build
+    zh: '基地建造 · 拖到网格'
+    en: 'BASE CONSTRUCTION · DRAG TO GRID'
+  - key: hud.command
+    zh: '洞穴指挥终端'
+    en: 'CAVE COMMAND TERMINAL'
+  - key: hud.tab_build
+    zh: '建造'
+    en: 'BUILD'
+  - key: hud.tab_equipment
+    zh: '装备'
+    en: 'LOADOUT'
+  - key: hud.equipment_reserved
+    zh: '选择士兵 · 模组位预留'
+    en: 'SELECT SOLDIER · MODULE SLOTS RESERVED'
+  - key: hud.equipment_armor
+    zh: '护甲'
+    en: 'ARMOR'
+  - key: hud.equipment_tool
+    zh: '武器'
+    en: 'WEAPON'
+  - key: hud.equipment_core
+    zh: '核心'
+    en: 'CORE'
+  - key: build.barracks
+    zh: '兵营\n{0} 金币'
+    en: 'BARRACKS\n{0} COINS'
+  - key: build.hospital
+    zh: '医院\n{0} 金币'
+    en: 'HOSPITAL\n{0} COINS'
+  - key: build.academy
+    zh: '医学院\n{0} 金币'
+    en: 'ACADEMY\n{0} COINS'
   - key: btn.language
     zh: 'EN'
     en: '中文'
@@ -124,6 +157,12 @@ MonoBehaviour:
   - key: toast.heavy_invasion
     zh: '警报：重型机械侵略者进入洞穴'
     en: 'Alert: heavy mechanical invaders entered the cave'
+  - key: toast.drag_to_build
+    zh: '按住建造卡，拖到亮起的基地网格中'
+    en: 'Hold a build card and drag it onto the highlighted base grid'
+  - key: toast.build_blocked
+    zh: '此处被占用，或三级建筑占地超出基地边界'
+    en: 'Blocked: the level-3 footprint overlaps another site or the base boundary'
   - key: toast.infected
     zh: '虫体受到污染，生命流逝加速'
     en: 'Bug infected; health and aging accelerated'

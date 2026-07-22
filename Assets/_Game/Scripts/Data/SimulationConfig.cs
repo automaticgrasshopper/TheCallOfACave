@@ -58,6 +58,15 @@ namespace TCC.Data
         [Range(0.1f, 1f)] public float soldierRemainingLifeMultiplier = 0.5f;
 
         [Header("Facilities and production")]
+        [Tooltip("World grid size used while placing facilities.")]
+        public float buildingGridSize = 0.5f;
+        [Tooltip("Square half-extent reserved at placement for the level-3 footprint.")]
+        public float buildingReservedHalfExtent = 2.2f;
+        public float facilityLevel1Radius = 1.15f;
+        public float facilityLevel2Radius = 1.5f;
+        public float facilityLevel3Radius = 1.9f;
+        public Vector2 buildingAreaMin = new Vector2(-8.5f, -4.5f);
+        public Vector2 buildingAreaMax = new Vector2(3.5f, 4.5f);
         [Tooltip("Level 1 makes scrap, level 2 makes components, level 3 makes elite equipment.")]
         public float factoryLevel1Interval = 8f;
         public float factoryLevel2Interval = 7f;
@@ -91,5 +100,8 @@ namespace TCC.Data
             => level >= 3 ? InventoryItemType.EliteEquipment
                 : level == 2 ? InventoryItemType.RefinedComponent
                 : InventoryItemType.MetalScrap;
+
+        public float FacilityRadius(int level)
+            => level >= 3 ? facilityLevel3Radius : level == 2 ? facilityLevel2Radius : facilityLevel1Radius;
     }
 }

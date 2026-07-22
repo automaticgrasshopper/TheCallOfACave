@@ -2,6 +2,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TCC.Core;
 using TCC.Gameplay;
 using TCC.Managers;
 
@@ -15,23 +16,18 @@ namespace TCC.UI
 
         private void OnEnable()
         {
-            if (InventoryManager.Exists) InventoryManager.Instance.Changed += Refresh;
+            GameEvents.InventoryChanged += Refresh;
             Refresh();
         }
 
         private void Start()
         {
-            if (InventoryManager.Exists)
-            {
-                InventoryManager.Instance.Changed -= Refresh;
-                InventoryManager.Instance.Changed += Refresh;
-            }
             Refresh();
         }
 
         private void OnDisable()
         {
-            if (InventoryManager.Exists) InventoryManager.Instance.Changed -= Refresh;
+            GameEvents.InventoryChanged -= Refresh;
         }
 
         public void Configure(InventorySlotView[] slots, Sprite[] icons)
@@ -52,8 +48,18 @@ namespace TCC.UI
                 InventoryItemType type = i < itemKinds ? (InventoryItemType)i : InventoryItemType.Food;
                 int count = occupied ? InventoryManager.Instance.Count(type) : 0;
                 Sprite icon = _icons != null && i < _icons.Length ? _icons[i] : null;
+                if (icon == null && i < itemKinds) icon = LoadFallbackIcon(type);
                 _slots[i]?.SetItem(type, count, icon, occupied);
             }
+        }
+
+        private static Sprite LoadFallbackIcon(InventoryItemType type)
+        {
+            string path = type == InventoryItemType.Food ? "Art/Inventory/food_ration"
+                : type == InventoryItemType.MetalScrap ? "Art/Inventory/metal_scrap"
+                : type == InventoryItemType.RefinedComponent ? "Art/Inventory/refined_component"
+                : "Art/Inventory/elite_equipment";
+            return Resources.Load<Sprite>(path);
         }
     }
 }

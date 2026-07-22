@@ -14,7 +14,11 @@ namespace TCC.Managers
 
         public event Action Changed;
 
-        private void Start() => Changed?.Invoke();
+        private void Start()
+        {
+            Changed?.Invoke();
+            GameEvents.RaiseInventoryChanged();
+        }
 
         public int Count(InventoryItemType type) => _counts[(int)type];
 
@@ -23,6 +27,7 @@ namespace TCC.Managers
             if (amount <= 0) return;
             _counts[(int)type] += amount;
             Changed?.Invoke();
+            GameEvents.RaiseInventoryChanged();
             if (type == InventoryItemType.Food)
                 GameEvents.RaiseFoodChanged(Count(InventoryItemType.Food));
         }
@@ -34,6 +39,7 @@ namespace TCC.Managers
             if (_counts[index] < amount) return false;
             _counts[index] -= amount;
             Changed?.Invoke();
+            GameEvents.RaiseInventoryChanged();
             if (type == InventoryItemType.Food)
                 GameEvents.RaiseFoodChanged(Count(InventoryItemType.Food));
             return true;

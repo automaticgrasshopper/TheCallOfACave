@@ -29,6 +29,13 @@ namespace TCC.Core
 
         private void Start()
         {
+#if UNITY_EDITOR
+            if (UnityEditor.SessionState.GetBool("TCC.PlayGameplay", false))
+            {
+                UnityEditor.SessionState.SetBool("TCC.PlayGameplay", false);
+                BootIntoPlay = true;
+            }
+#endif
             // The loss overlay is still backward-compatible with older scenes.
             // The art director itself is now a normal, scene-wired component.
             GameOverView.Ensure();
@@ -36,6 +43,7 @@ namespace TCC.Core
             {
                 BootIntoPlay = false;
                 SetState(GameState.Playing);
+                if (TitleMenuView.Exists) TitleMenuView.Instance.Hide();
             }
             else
             {

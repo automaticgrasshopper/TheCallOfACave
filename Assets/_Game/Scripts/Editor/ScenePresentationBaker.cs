@@ -1,9 +1,13 @@
 #if UNITY_EDITOR
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Tilemaps;
+using UnityEngine.U2D;
+using TCC.Core;
 using TCC.Data;
 using TCC.Gameplay;
 using TCC.Managers;
@@ -18,8 +22,17 @@ namespace TCC.EditorTools
     public static class ScenePresentationBaker
     {
         private const string WorldArt = "Assets/_Game/Art/World/";
+        private const string TileArt = "Assets/_Game/Art/Tiles/";
 
         static ScenePresentationBaker() => EditorApplication.delayCall += BakeOpenMainScene;
+
+        [MenuItem("TCC/Play Gameplay")]
+        private static void PlayGameplay()
+        {
+            if (Application.isPlaying) return;
+            SessionState.SetBool("TCC.PlayGameplay", true);
+            EditorApplication.isPlaying = true;
+        }
 
         [MenuItem("TCC/Bake Scene Presentation")]
         public static void BakeOpenMainScene()
@@ -28,7 +41,9 @@ namespace TCC.EditorTools
             var scene = EditorSceneManager.GetActiveScene();
             if (!scene.IsValid() || scene.path != "Assets/_Game/Scenes/Main.unity") return;
 
+            NormalizePixelArtImporters();
             BakeWorld();
+            BakeFacilityPrefabsAndPlacement();
             BakeEntityPrefabs();
             BakeHudExtensions();
 
@@ -51,73 +66,258 @@ namespace TCC.EditorTools
             Debug.Log("[TCC] Scene presentation baked: UI and world are now WYSIWYG.");
         }
 
+        private static void NormalizePixelArtImporters()
+        {
+            foreach (string root in new[] { "Assets/Resources/Art", "Assets/_Game/Art" })
+            {
+                foreach (string guid in AssetDatabase.FindAssets("t:Texture2D", new[] { root }))
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                    if (importer == null) continue;
+                    bool dirty = importer.filterMode != FilterMode.Point || importer.mipmapEnabled ||
+                        importer.textureCompression != TextureImporterCompression.Uncompressed;
+                    if (!dirty) continue;
+                    importer.filterMode = FilterMode.Point;
+                    importer.mipmapEnabled = false;
+                    importer.alphaIsTransparency = true;
+                    importer.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.SaveAndReimport();
+                }
+            }
+        }
+
         private static void BakeWorld()
         {
             Directory.CreateDirectory(WorldArt);
-            var ground = EnsureSprite("barren_ground.png", MakeGround(), 16f);
-            var ring = EnsureSprite("site_ring.png", MakeRing(), 32f);
-            var pixel = EnsureSprite("white_pixel.png", MakePixel(), 4f);
+            var pit = LoadWorldSprite(WorldArt + "nursery_pit.png", 3.8f);
+            var grid = EnsureSprite("placement_grid.png", MakePlacementGrid(), 20f);
 
             var world = GameObject.Find("[World]")?.transform;
             if (world == null) return;
 
-            var backdrop = Child(world, "Cave Backdrop");
-            var backdropRenderer = Component<SpriteRenderer>(backdrop);
-            backdropRenderer.sprite = ground;
-            backdropRenderer.color = Color.white;
-            backdropRenderer.sortingOrder = -100;
-            backdrop.transform.localPosition = Vector3.zero;
-            backdrop.transform.localScale = Vector3.one;
+            var backdrop = world.Find("Cave Backdrop");
+            if (backdrop != null) Object.DestroyImmediate(backdrop.gameObject);
+            BakeTerrainTilemap(world);
+
+            if (Camera.main != null)
+            {
+                var pixelCamera = Component<PixelPerfectCamera>(Camera.main.gameObject);
+                // Full HD is an exact 3x presentation of this reference canvas. This
+                // preserves cracks, rivets and anatomy without blurred resampling.
+                pixelCamera.assetsPPU = 32;
+                pixelCamera.refResolutionX = 640;
+                pixelCamera.refResolutionY = 360;
+                pixelCamera.upscaleRT = true;
+                pixelCamera.pixelSnapping = false;
+                pixelCamera.cropFrameX = false;
+                pixelCamera.cropFrameY = false;
+                pixelCamera.stretchFill = false;
+            }
 
             var birth = GameObject.Find("BirthCircle");
-            var labor = GameObject.Find("LaborCircle");
-            StyleSite(birth, ring, new Color(.33f, .56f, .48f, .5f), false);
-            if (labor != null) labor.transform.localPosition = new Vector3(-7f, 3.2f, 0f);
-            StyleSite(labor, ring, new Color(.68f, .48f, .25f, .24f), true);
+            if (birth != null)
+            {
+                birth.transform.localScale = Vector3.one;
+                var birthRenderer = Component<SpriteRenderer>(birth);
+                birthRenderer.sprite = pit;
+                birthRenderer.color = Color.white;
+                birthRenderer.sortingOrder = -12;
+                var core = birth.transform.Find("Site Core");
+                if (core != null) Object.DestroyImmediate(core.gameObject);
+            }
             MakeLabel(world, "Nursery Label", new Vector3(-6.8f, -2.05f, 0f),
                 LocalizationTable.Keys.ZoneNursery);
-            MakeLabel(world, "Factory Label", new Vector3(-7f, 4.35f, 0f),
-                LocalizationTable.Keys.ZoneFactory);
+
+            var gridGo = Child(world, "Placement Grid Overlay");
+            gridGo.transform.localPosition = new Vector3(-2.5f, 0f, 0f);
+            gridGo.transform.localScale = Vector3.one;
+            var gridRenderer = Component<SpriteRenderer>(gridGo);
+            gridRenderer.sprite = grid;
+            gridRenderer.color = new Color(.32f, .8f, .67f, .36f);
+            gridRenderer.sortingOrder = -40;
+            gridGo.SetActive(false);
+
             var oldRiver = GameObject.Find("Sand River");
             if (oldRiver != null) Object.DestroyImmediate(oldRiver);
             var oldPit = GameObject.Find("Pit");
             if (oldPit != null) Object.DestroyImmediate(oldPit);
             var oldBarracks = GameObject.Find("BarracksSite");
             if (oldBarracks != null) Object.DestroyImmediate(oldBarracks);
-            var oldLabor = labor != null ? labor.GetComponent<LaborZone>() : null;
-            if (oldLabor != null) oldLabor.enabled = false;
-
-            BakeFacility(world, labor, FacilityType.Factory, new Vector2(-7f, 3.2f), ring, pixel,
-                LocalizationTable.Keys.ZoneFactory, "Factory Label");
-            BakeFacility(world, null, FacilityType.Barracks, new Vector2(-4.55f, 3.2f), ring, pixel,
-                LocalizationTable.Keys.ZoneBarracks, "Barracks Label");
-            BakeFacility(world, null, FacilityType.Hospital, new Vector2(-4.55f, -3.2f), ring, pixel,
-                LocalizationTable.Keys.ZoneHospital, "Hospital Label");
-            BakeFacility(world, null, FacilityType.Academy, new Vector2(-2.1f, 3.2f), ring, pixel,
-                LocalizationTable.Keys.ZoneAcademy, "Academy Label");
         }
 
-        private static void BakeFacility(Transform world, GameObject existing, FacilityType type,
-            Vector2 position, Sprite ring, Sprite pixel, string labelKey, string labelName)
+        private static void BakeTerrainTilemap(Transform world)
         {
-            var site = existing != null ? existing : Child(world, type + " Site");
-            site.name = type + " Site";
-            site.transform.localPosition = position;
-            site.transform.localScale = Vector3.one * .82f;
-            var ringRenderer = Component<SpriteRenderer>(site);
-            ringRenderer.sprite = ring;
-            ringRenderer.sortingOrder = -10;
-            var collider = Component<CircleCollider2D>(site);
-            collider.radius = 1.28f;
+            Directory.CreateDirectory(TileArt);
+            var sandSprites = new Sprite[4];
+            for (int i = 0; i < sandSprites.Length; i++)
+            {
+                var sprite = EnsureSpriteAt(TileArt + $"sand_{i}.png", MakeTerrainTile(i, false), 64f);
+                sandSprites[i] = sprite;
+            }
+            var groundRule = EnsureGroundRuleTile(TileArt + "desert_ground_rule.asset", sandSprites);
+            var rock = new Tile[2];
+            for (int i = 0; i < rock.Length; i++)
+            {
+                var sprite = EnsureSpriteAt(TileArt + $"rock_edge_{i}.png", MakeTerrainTile(i, true), 64f);
+                rock[i] = EnsureTile(TileArt + $"rock_edge_{i}.asset", sprite, $"Rock Edge {i}");
+            }
 
-            var core = Child(site.transform, "Facility Core");
-            core.transform.localPosition = Vector3.zero;
-            var coreRenderer = Component<SpriteRenderer>(core);
-            coreRenderer.sprite = ring;
-            coreRenderer.sortingOrder = -9;
+            var gridGo = Child(world, "Terrain Grid");
+            gridGo.transform.localPosition = new Vector3(-10f, -5.75f, 0f);
+            gridGo.transform.localScale = Vector3.one;
+            var terrainGrid = Component<Grid>(gridGo);
+            terrainGrid.cellSize = new Vector3(.5f, .5f, 0f);
+            terrainGrid.cellGap = Vector3.zero;
 
-            var back = Child(site.transform, "Facility Progress Back");
-            back.transform.localPosition = new Vector3(0f, 1.45f, 0f);
+            var groundGo = Child(gridGo.transform, "Ground Tilemap");
+            var ground = Component<Tilemap>(groundGo);
+            var groundRenderer = Component<TilemapRenderer>(groundGo);
+            groundRenderer.sortingOrder = -100;
+            ground.ClearAllTiles();
+
+            var borderGo = Child(gridGo.transform, "Cave Edge Tilemap");
+            var border = Component<Tilemap>(borderGo);
+            var borderRenderer = Component<TilemapRenderer>(borderGo);
+            borderRenderer.sortingOrder = -99;
+            border.ClearAllTiles();
+
+            const int width = 40, height = 23;
+            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+            {
+                int hash = Mathf.Abs(x * 17 + y * 31 + x * y * 3);
+                ground.SetTile(new Vector3Int(x, y, 0), groundRule);
+                bool edge = x == 0 || y == 0 || x == width - 1 || y == height - 1;
+                if (edge) border.SetTile(new Vector3Int(x, y, 0), rock[hash % rock.Length]);
+            }
+            ground.CompressBounds();
+            border.CompressBounds();
+        }
+
+        private static RuleTile EnsureGroundRuleTile(string path, Sprite[] sprites)
+        {
+            var tile = AssetDatabase.LoadAssetAtPath<RuleTile>(path);
+            if (tile == null)
+            {
+                tile = ScriptableObject.CreateInstance<RuleTile>();
+                AssetDatabase.CreateAsset(tile, path);
+            }
+            tile.name = Path.GetFileNameWithoutExtension(path);
+            tile.m_DefaultSprite = sprites[0];
+            tile.m_DefaultColliderType = Tile.ColliderType.None;
+            tile.m_TilingRules.Clear();
+            var rule = new RuleTile.TilingRule
+            {
+                m_Sprites = sprites,
+                m_Output = RuleTile.TilingRuleOutput.OutputSprite.Random,
+                m_PerlinScale = .31f,
+                m_ColliderType = Tile.ColliderType.None
+            };
+            rule.m_Neighbors.Clear();
+            rule.m_NeighborPositions.Clear();
+            tile.m_TilingRules.Add(rule);
+            EditorUtility.SetDirty(tile);
+            return tile;
+        }
+
+        private static Tile EnsureTile(string path, Sprite sprite, string name)
+        {
+            var tile = AssetDatabase.LoadAssetAtPath<Tile>(path);
+            if (tile == null)
+            {
+                tile = ScriptableObject.CreateInstance<Tile>();
+                AssetDatabase.CreateAsset(tile, path);
+            }
+            tile.name = Path.GetFileNameWithoutExtension(path);
+            tile.sprite = sprite;
+            tile.color = Color.white;
+            tile.colliderType = Tile.ColliderType.None;
+            EditorUtility.SetDirty(tile);
+            return tile;
+        }
+
+        private static void BakeFacilityPrefabsAndPlacement()
+        {
+            Directory.CreateDirectory("Assets/_Game/Prefabs");
+            var ring = EnsureSprite("site_ring.png", MakeRing(), 32f);
+            var pixel = EnsureSprite("white_pixel.png", MakePixel(), 4f);
+            var level2Decor = EnsureSprite("facility_level2_decor.png", MakeFacilityDecor(false), 32f);
+            var level3Decor = EnsureSprite("facility_level3_decor.png", MakeFacilityDecor(true), 32f);
+            var factory = MakeFacilityPrefab(FacilityType.Factory, "Factory Facility",
+                "Assets/Resources/Art/Facilities/facility_factory.png",
+                "Assets/_Game/Prefabs/FactoryFacility.prefab", LocalizationTable.Keys.ZoneFactory, ring, pixel, level2Decor, level3Decor);
+            var barracks = MakeFacilityPrefab(FacilityType.Barracks, "Barracks Facility",
+                "Assets/Resources/Art/Facilities/facility_barracks.png",
+                "Assets/_Game/Prefabs/BarracksFacility.prefab", LocalizationTable.Keys.ZoneBarracks, ring, pixel, level2Decor, level3Decor);
+            var hospital = MakeFacilityPrefab(FacilityType.Hospital, "Hospital Facility",
+                "Assets/Resources/Art/Facilities/facility_hospital.png",
+                "Assets/_Game/Prefabs/HospitalFacility.prefab", LocalizationTable.Keys.ZoneHospital, ring, pixel, level2Decor, level3Decor);
+            var academy = MakeFacilityPrefab(FacilityType.Academy, "Academy Facility",
+                "Assets/Resources/Art/Facilities/facility_academy.png",
+                "Assets/_Game/Prefabs/AcademyFacility.prefab", LocalizationTable.Keys.ZoneAcademy, ring, pixel, level2Decor, level3Decor);
+
+            var world = GameObject.Find("[World]")?.transform;
+            if (world == null) return;
+            foreach (var facility in Object.FindObjectsOfType<ColonyFacility>(true))
+                if (facility != null && facility.gameObject.scene.IsValid()) Object.DestroyImmediate(facility.gameObject);
+            foreach (string stale in new[] { "LaborCircle", "Factory Label", "Barracks Label", "Hospital Label", "Academy Label" })
+            {
+                var go = GameObject.Find(stale);
+                if (go != null) Object.DestroyImmediate(go);
+            }
+
+            if (factory != null)
+            {
+                var factorySite = (GameObject)PrefabUtility.InstantiatePrefab(factory.gameObject, world);
+                factorySite.name = "Factory Site";
+                factorySite.transform.localPosition = new Vector3(-7f, 3.2f, 0f);
+            }
+
+            var managers = GameObject.Find("[Managers]")?.transform;
+            if (managers == null) return;
+            var placementGo = Child(managers, "Building Placement Manager");
+            var placement = Component<BuildingPlacementManager>(placementGo);
+            Set(placement, "_barracksPrefab", barracks);
+            Set(placement, "_hospitalPrefab", hospital);
+            Set(placement, "_academyPrefab", academy);
+            Set(placement, "_worldRoot", world);
+            Set(placement, "_gridOverlay", world.Find("Placement Grid Overlay")?.gameObject);
+        }
+
+        private static ColonyFacility MakeFacilityPrefab(FacilityType type, string name, string spritePath,
+            string prefabPath, string labelKey, Sprite halo, Sprite pixel, Sprite level2Sprite, Sprite level3Sprite)
+        {
+            var structureSprite = LoadWorldSprite(spritePath, 3.8f);
+            var root = new GameObject(name, typeof(CircleCollider2D), typeof(ColonyFacility));
+
+            var footprint = Child(root.transform, "Reserved Maximum Footprint");
+            var footprintRenderer = Component<SpriteRenderer>(footprint);
+            footprintRenderer.sprite = pixel;
+            footprintRenderer.sortingOrder = -18;
+            footprintRenderer.enabled = false;
+
+            var upgradeHalo = Child(root.transform, "Upgrade Halo");
+            var haloRenderer = Component<SpriteRenderer>(upgradeHalo);
+            haloRenderer.sprite = halo;
+            haloRenderer.sortingOrder = 2;
+
+            var structure = Child(root.transform, "Hollow Perimeter Structure");
+            var structureRenderer = Component<SpriteRenderer>(structure);
+            structureRenderer.sprite = structureSprite;
+            structureRenderer.sortingOrder = 3;
+
+            var level2Go = Child(root.transform, "Level 2 Utility Modules");
+            var level2Renderer = Component<SpriteRenderer>(level2Go);
+            level2Renderer.sprite = level2Sprite;
+            level2Renderer.sortingOrder = 4;
+            level2Renderer.enabled = false;
+            var level3Go = Child(root.transform, "Level 3 Command Modules");
+            var level3Renderer = Component<SpriteRenderer>(level3Go);
+            level3Renderer.sprite = level3Sprite;
+            level3Renderer.sortingOrder = 5;
+            level3Renderer.enabled = false;
+
+            var back = Child(root.transform, "Facility Progress Back");
             back.transform.localScale = new Vector3(1.8f, .17f, 1f);
             var backRenderer = Component<SpriteRenderer>(back);
             backRenderer.sprite = pixel;
@@ -133,9 +333,14 @@ namespace TCC.EditorTools
             fillRenderer.sortingOrder = 26;
             fillRenderer.enabled = false;
 
-            var facility = Component<ColonyFacility>(site);
-            facility.Configure(type, 1.05f, ringRenderer, coreRenderer, backRenderer, fillRenderer);
-            MakeLabel(world, labelName, new Vector3(position.x, position.y + 1.18f, 0f), labelKey);
+            MakeLabel(root.transform, "Facility Label", Vector3.zero, labelKey);
+            var label = root.transform.Find("Facility Label")?.GetComponent<TMP_Text>();
+            var facility = root.GetComponent<ColonyFacility>();
+            facility.Configure(type, 1.15f, structureRenderer, haloRenderer, backRenderer, fillRenderer);
+            facility.ConfigurePresentation(footprintRenderer, label, level2Renderer, level3Renderer, 2.2f, 3.8f);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Object.DestroyImmediate(root);
+            return prefab != null ? prefab.GetComponent<ColonyFacility>() : null;
         }
 
         private static void BakeHudExtensions()
@@ -180,6 +385,189 @@ namespace TCC.EditorTools
             Set(hud, "_foodText", foodText);
             Set(hud, "_buyFoodButton", buyFood);
             BakeInventory(card.parent);
+            BakeBuildPalette(card.parent);
+        }
+
+        private static void BakeBuildPalette(Transform canvas)
+        {
+            if (canvas == null) return;
+            var panel = UIChild(canvas, "Base Construction Palette");
+            var rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(-18f, -18f);
+            rect.sizeDelta = new Vector2(440f, 252f);
+            var image = Component<UnityEngine.UI.Image>(panel);
+            image.color = new Color(.014f, .026f, .03f, .96f);
+            PixelChrome.Apply(panel, new Color(.18f, .64f, .62f, 1f), new Color(.78f, .52f, .22f, 1f));
+
+            foreach (string stale in new[] { "Build Title", "Barracks Build Card", "Hospital Build Card", "Academy Build Card" })
+            {
+                var child = rect.Find(stale);
+                if (child != null) Object.DestroyImmediate(child.gameObject);
+            }
+
+            var titleGo = UIChild(rect, "Command Title");
+            var titleRect = titleGo.GetComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0f, 1f); titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(.5f, 1f);
+            titleRect.anchoredPosition = new Vector2(0f, -8f);
+            titleRect.sizeDelta = new Vector2(-24f, 25f);
+            var title = Component<TextMeshProUGUI>(titleGo);
+            ApplyUiText(title, 16f, new Color(.84f, .7f, .4f, 1f), TextAlignmentOptions.Center);
+            Component<LocalizedText>(titleGo).SetKey(LocalizationTable.Keys.HudCommand);
+
+            var buildTab = TabButton(rect, "Build Tab", LocalizationTable.Keys.HudTabBuild, -103f);
+            var equipmentTab = TabButton(rect, "Equipment Tab", LocalizationTable.Keys.HudTabEquipment, 103f);
+
+            var buildPage = UIChild(rect, "Build Page");
+            var buildRect = buildPage.GetComponent<RectTransform>();
+            buildRect.anchorMin = Vector2.zero; buildRect.anchorMax = Vector2.one;
+            buildRect.offsetMin = new Vector2(10f, 8f);
+            buildRect.offsetMax = new Vector2(-10f, -74f);
+
+            var hintGo = UIChild(buildRect, "Build Hint");
+            var hintRect = hintGo.GetComponent<RectTransform>();
+            hintRect.anchorMin = new Vector2(0f, 1f); hintRect.anchorMax = new Vector2(1f, 1f);
+            hintRect.pivot = new Vector2(.5f, 1f);
+            hintRect.anchoredPosition = new Vector2(0f, -1f);
+            hintRect.sizeDelta = new Vector2(-12f, 22f);
+            var hint = Component<TextMeshProUGUI>(hintGo);
+            ApplyUiText(hint, 12f, new Color(.58f, .68f, .62f, 1f), TextAlignmentOptions.Center);
+            Component<LocalizedText>(hintGo).SetKey(LocalizationTable.Keys.HudBuild);
+
+            BuildCard(buildRect, "Barracks Build Card", FacilityType.Barracks, LocalizationTable.Keys.BuildBarracks,
+                "Assets/Resources/Art/Facilities/facility_barracks.png", -140f);
+            BuildCard(buildRect, "Hospital Build Card", FacilityType.Hospital, LocalizationTable.Keys.BuildHospital,
+                "Assets/Resources/Art/Facilities/facility_hospital.png", 0f);
+            BuildCard(buildRect, "Academy Build Card", FacilityType.Academy, LocalizationTable.Keys.BuildAcademy,
+                "Assets/Resources/Art/Facilities/facility_academy.png", 140f);
+
+            var equipmentPage = UIChild(rect, "Equipment Page");
+            var equipmentRect = equipmentPage.GetComponent<RectTransform>();
+            equipmentRect.anchorMin = Vector2.zero; equipmentRect.anchorMax = Vector2.one;
+            equipmentRect.offsetMin = new Vector2(18f, 14f);
+            equipmentRect.offsetMax = new Vector2(-18f, -80f);
+            var equipmentHintGo = UIChild(equipmentRect, "Equipment Hint");
+            var equipmentHintRect = equipmentHintGo.GetComponent<RectTransform>();
+            equipmentHintRect.anchorMin = new Vector2(0f, 1f); equipmentHintRect.anchorMax = new Vector2(1f, 1f);
+            equipmentHintRect.pivot = new Vector2(.5f, 1f);
+            equipmentHintRect.anchoredPosition = Vector2.zero;
+            equipmentHintRect.sizeDelta = new Vector2(0f, 28f);
+            var equipmentHint = Component<TextMeshProUGUI>(equipmentHintGo);
+            ApplyUiText(equipmentHint, 13f, new Color(.66f, .72f, .66f, 1f), TextAlignmentOptions.Center);
+            Component<LocalizedText>(equipmentHintGo).SetKey(LocalizationTable.Keys.HudEquipmentReserved);
+            EquipmentSlot(equipmentRect, "Armor Module Slot", LocalizationTable.Keys.HudEquipmentArmor, -126f);
+            EquipmentSlot(equipmentRect, "Weapon Module Slot", LocalizationTable.Keys.HudEquipmentTool, 0f);
+            EquipmentSlot(equipmentRect, "Core Module Slot", LocalizationTable.Keys.HudEquipmentCore, 126f);
+            equipmentPage.SetActive(false);
+
+            Component<CommandDockView>(panel).Configure(buildPage, equipmentPage, buildTab.button,
+                equipmentTab.button, buildTab.image, equipmentTab.image);
+        }
+
+        private static (UnityEngine.UI.Button button, UnityEngine.UI.Image image) TabButton(
+            RectTransform parent, string name, string key, float x)
+        {
+            var go = UIChild(parent, name);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+            rect.pivot = new Vector2(.5f, 1f);
+            rect.anchoredPosition = new Vector2(x, -38f);
+            rect.sizeDelta = new Vector2(196f, 30f);
+            var image = Component<UnityEngine.UI.Image>(go);
+            image.color = new Color(.025f, .045f, .05f, .95f);
+            PixelChrome.Apply(go, new Color(.15f, .48f, .48f, 1f), new Color(.65f, .45f, .2f, 1f));
+            var button = Component<UnityEngine.UI.Button>(go);
+            button.targetGraphic = image;
+            var labelGo = UIChild(rect, "Label");
+            var labelRect = labelGo.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
+            var label = Component<TextMeshProUGUI>(labelGo);
+            ApplyUiText(label, 14f, new Color(.8f, .78f, .64f, 1f), TextAlignmentOptions.Center);
+            label.raycastTarget = false;
+            Component<LocalizedText>(labelGo).SetKey(key);
+            return (button, image);
+        }
+
+        private static void EquipmentSlot(RectTransform parent, string name, string key, float x)
+        {
+            var go = UIChild(parent, name);
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 0f);
+            rect.pivot = new Vector2(.5f, 0f);
+            rect.anchoredPosition = new Vector2(x, 2f);
+            rect.sizeDelta = new Vector2(112f, 116f);
+            var image = Component<UnityEngine.UI.Image>(go);
+            image.color = new Color(.025f, .04f, .045f, .94f);
+            PixelChrome.Apply(go, new Color(.16f, .34f, .34f, .9f), new Color(.46f, .34f, .18f, .9f));
+            var socket = UIChild(rect, "Socket");
+            var socketRect = socket.GetComponent<RectTransform>();
+            socketRect.anchorMin = socketRect.anchorMax = new Vector2(.5f, 1f);
+            socketRect.pivot = new Vector2(.5f, 1f);
+            socketRect.anchoredPosition = new Vector2(0f, -10f);
+            socketRect.sizeDelta = new Vector2(72f, 72f);
+            var socketImage = Component<UnityEngine.UI.Image>(socket);
+            socketImage.sprite = LoadUiSprite("Assets/Resources/Art/Inventory/elite_equipment.png");
+            socketImage.color = new Color(.35f, .42f, .4f, .22f);
+            socketImage.preserveAspect = true;
+            var labelGo = UIChild(rect, "Label");
+            var labelRect = labelGo.GetComponent<RectTransform>();
+            labelRect.anchorMin = new Vector2(0f, 0f); labelRect.anchorMax = new Vector2(1f, 0f);
+            labelRect.pivot = new Vector2(.5f, 0f);
+            labelRect.anchoredPosition = new Vector2(0f, 5f);
+            labelRect.sizeDelta = new Vector2(-8f, 25f);
+            var label = Component<TextMeshProUGUI>(labelGo);
+            ApplyUiText(label, 13f, new Color(.62f, .65f, .58f, 1f), TextAlignmentOptions.Center);
+            Component<LocalizedText>(labelGo).SetKey(key);
+        }
+
+        private static void BuildCard(RectTransform parent, string name, FacilityType type,
+            string labelKey, string iconPath, float x)
+        {
+            var card = UIChild(parent, name);
+            var rect = card.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+            rect.pivot = new Vector2(.5f, 1f);
+            rect.anchoredPosition = new Vector2(x, -28f);
+            rect.sizeDelta = new Vector2(122f, 138f);
+            var background = Component<UnityEngine.UI.Image>(card);
+            background.color = new Color(.045f, .12f, .12f, .98f);
+            PixelChrome.Apply(card, new Color(.2f, .58f, .57f, .9f), new Color(.64f, .45f, .22f, .9f));
+
+            var iconGo = UIChild(rect, "Facility Icon");
+            var iconRect = iconGo.GetComponent<RectTransform>();
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(.5f, 1f);
+            iconRect.pivot = new Vector2(.5f, 1f);
+            iconRect.anchoredPosition = new Vector2(0f, -7f);
+            iconRect.sizeDelta = new Vector2(88f, 82f);
+            var icon = Component<UnityEngine.UI.Image>(iconGo);
+            icon.sprite = LoadUiSprite(iconPath);
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+
+            var labelGo = UIChild(rect, "Build Label");
+            var labelRect = labelGo.GetComponent<RectTransform>();
+            labelRect.anchorMin = new Vector2(0f, 0f); labelRect.anchorMax = new Vector2(1f, 0f);
+            labelRect.pivot = new Vector2(.5f, 0f);
+            labelRect.anchoredPosition = new Vector2(0f, 6f);
+            labelRect.sizeDelta = new Vector2(-10f, 42f);
+            var label = Component<TextMeshProUGUI>(labelGo);
+            ApplyUiText(label, 14f, new Color(.82f, .8f, .68f, 1f), TextAlignmentOptions.Center);
+            label.enableWordWrapping = true;
+            label.raycastTarget = false;
+
+            Component<BuildCardView>(card).Configure(type, labelKey, label, background, icon);
+        }
+
+        private static void ApplyUiText(TMP_Text text, float size, Color color, TextAlignmentOptions alignment)
+        {
+            var loc = Object.FindObjectOfType<LocalizationManager>();
+            if (loc != null && loc.Font != null) text.font = loc.Font;
+            text.fontSize = size;
+            text.color = color;
+            text.alignment = alignment;
         }
 
         private static void BakeInventory(Transform canvas)
@@ -262,6 +650,8 @@ namespace TCC.EditorTools
                 var icon = Component<UnityEngine.UI.Image>(iconGo);
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
+                icon.enabled = true;
+                icon.color = new Color(1f, 1f, 1f, .2f);
 
                 var countGo = UIChild(slotRect, "Count");
                 var countRect = countGo.GetComponent<RectTransform>() ?? countGo.AddComponent<RectTransform>();
@@ -304,7 +694,7 @@ namespace TCC.EditorTools
         {
             const string prefabRoot = "Assets/_Game/Prefabs/";
             var part = MakeEntityPrefab<MetalPart>(prefabRoot + "MetalPart.prefab", "Metal Part",
-                "Assets/Resources/Art/metal_part.png", .55f, .34f);
+                "Assets/Resources/Art/Inventory/metal_scrap.png", .55f, .34f);
             var contamination = MakeEntityPrefab<ContaminationSource>(prefabRoot + "Contamination.prefab", "Contamination",
                 "Assets/Resources/Art/ColonyV2/contamination_oil.png", 1.35f, .5f);
             var enemy = MakeEntityPrefab<EnemyRobot>(prefabRoot + "EnemyRobot.prefab", "Scavenger Robot",
@@ -472,6 +862,29 @@ namespace TCC.EditorTools
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
+        private static Sprite EnsureSpriteAt(string path, Texture2D texture, float ppu)
+        {
+            byte[] bytes = texture.EncodeToPNG();
+            if (!File.Exists(path) || !File.ReadAllBytes(path).SequenceEqual(bytes))
+            {
+                File.WriteAllBytes(path, bytes);
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            }
+            Object.DestroyImmediate(texture);
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer != null)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spritePixelsPerUnit = ppu;
+                importer.filterMode = FilterMode.Point;
+                importer.mipmapEnabled = false;
+                importer.alphaIsTransparency = true;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
         private static Sprite LoadUiSprite(string path)
         {
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -479,6 +892,24 @@ namespace TCC.EditorTools
             {
                 importer.textureType = TextureImporterType.Sprite;
                 importer.spritePixelsPerUnit = 96f;
+                importer.filterMode = FilterMode.Point;
+                importer.mipmapEnabled = false;
+                importer.alphaIsTransparency = true;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
+        private static Sprite LoadWorldSprite(string path, float worldWidth)
+        {
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer != null)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.GetSourceTextureWidthAndHeight(out int width, out _);
+                importer.spritePixelsPerUnit = Mathf.Max(1f, width / worldWidth);
                 importer.filterMode = FilterMode.Point;
                 importer.mipmapEnabled = false;
                 importer.alphaIsTransparency = true;
@@ -505,6 +936,95 @@ namespace TCC.EditorTools
             return tex;
         }
 
+        private static Texture2D MakeTerrainTile(int variant, bool rock)
+        {
+            const int size = 32;
+            var tex = NewTexture(size, size);
+            Color baseColor = rock ? new Color(.075f, .082f, .078f, 1f)
+                : new Color(.265f, .195f, .118f, 1f);
+            Color mid = rock ? new Color(.105f, .112f, .103f, 1f)
+                : new Color(.305f, .222f, .128f, 1f);
+            Color light = rock ? new Color(.155f, .155f, .135f, 1f)
+                : new Color(.365f, .260f, .145f, 1f);
+            Color dark = rock ? new Color(.032f, .040f, .041f, 1f)
+                : new Color(.185f, .128f, .075f, 1f);
+            Color deep = rock ? new Color(.014f, .020f, .023f, 1f)
+                : new Color(.125f, .082f, .050f, 1f);
+            for (int y = 0; y < size; y++) for (int x = 0; x < size; x++)
+            {
+                // Coherent patches read as packed earth/stone. Single-pixel confetti
+                // was the main source of the previous abstract appearance.
+                int field = Mathf.Abs((x / 4) * 19 + (y / 3) * 31 + variant * 43);
+                tex.SetPixel(x, y, field % 7 == 0 ? mid : baseColor);
+            }
+
+            if (rock)
+            {
+                // Mortared cave blocks with chipped corners and recessed seams.
+                int seamX = 10 + variant * 3;
+                PaintRect(tex, 1, 8, 29, 1, deep);
+                PaintRect(tex, 1, 9, 29, 1, light);
+                PaintRect(tex, seamX, 1, 1, 7, deep);
+                PaintRect(tex, (seamX + 11) % 27 + 2, 10, 1, 20, deep);
+                PaintRect(tex, 3 + variant * 2, 4, 4, 2, mid);
+                PaintRect(tex, 24 - variant, 22, 3, 2, mid);
+                DrawCrack(tex, 17 + variant, 15, variant % 2 == 0 ? 1 : -1, dark, light);
+            }
+            else
+            {
+                // Worn ochre flagstones echo the dense dungeon-floor language of the
+                // art reference while remaining desert material. Two-pixel seams
+                // survive the 2:1 source-to-reference reduction as deliberate pixels.
+                // A restrained flagstone grid communicates buildable cells without
+                // becoming the dominant texture. Functional placement uses a brighter
+                // overlay only while the player is dragging a facility.
+                PaintRect(tex, 0, 0, 32, 2, dark);
+                PaintRect(tex, 0, 0, 2, 32, dark);
+                PaintRect(tex, 2, 2, 28, 1, mid);
+                PaintRect(tex, 2, 2, 1, 28, mid);
+                PaintRect(tex, 2, 30, 30, 2, dark);
+                PaintRect(tex, 30, 2, 2, 30, dark);
+                if (variant == 1 || variant == 3)
+                    PaintRect(tex, 18 - variant, 13 + variant, 6, 3, mid);
+                if (variant == 2)
+                    PaintRect(tex, 5, 22, 8, 3, dark);
+
+                // Fine cracks, embedded flakes and shaded grit clusters.
+                DrawCrack(tex, 5 + variant * 5, 7 + (variant % 2) * 11,
+                    variant % 2 == 0 ? 1 : -1, deep, light);
+                PaintRect(tex, 22 - variant * 2, 6 + variant * 4, 3, 1, dark);
+                PaintRect(tex, 23 - variant * 2, 7 + variant * 4, 2, 1, light);
+                PaintRect(tex, 8 + variant * 4, 24 - variant * 3, 2, 2, dark);
+                tex.SetPixel(9 + variant * 4, 25 - variant * 3, light);
+                PaintRect(tex, 26 - variant * 3, 26, 2, 1, mid);
+            }
+            tex.Apply();
+            return tex;
+        }
+
+        private static void PaintRect(Texture2D tex, int x, int y, int width, int height, Color color)
+        {
+            for (int py = y; py < y + height; py++)
+            for (int px = x; px < x + width; px++)
+                if (px >= 0 && px < tex.width && py >= 0 && py < tex.height)
+                    tex.SetPixel(px, py, color);
+        }
+
+        private static void DrawCrack(Texture2D tex, int x, int y, int direction, Color shadow, Color rim)
+        {
+            int[] steps = { 0, 0, 1, 1, 2, 1, 2, 3, 3, 4 };
+            for (int i = 0; i < steps.Length; i += 2)
+            {
+                int px = x + steps[i] * direction;
+                int py = y + steps[i + 1];
+                if (px > 1 && px < tex.width - 2 && py > 1 && py < tex.height - 2)
+                {
+                    tex.SetPixel(px, py, shadow);
+                    tex.SetPixel(px + direction, py, rim);
+                }
+            }
+        }
+
         private static Texture2D MakeRing()
         {
             const int size = 64;
@@ -521,6 +1041,80 @@ namespace TCC.EditorTools
                 if (ring || ticks) tex.SetPixel(x, y, Color.white);
             }
             tex.Apply(); return tex;
+        }
+
+        private static Texture2D MakeNurseryPit()
+        {
+            const int w = 128, h = 96;
+            var tex = NewTexture(w, h);
+            Clear(tex);
+            Vector2 center = new Vector2((w - 1) * .5f, (h - 1) * .5f);
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++)
+            {
+                Vector2 d = new Vector2((x - center.x) / 58f, (y - center.y) / 39f);
+                float r = d.magnitude;
+                if (r > 1f) continue;
+                float grit = ((x * 11 + y * 17) % 19 == 0) ? .025f : 0f;
+                Color inner = new Color(.16f + grit, .115f + grit * .6f, .07f, .92f);
+                Color lip = new Color(.47f, .34f, .17f, 1f);
+                Color shadow = new Color(.055f, .065f, .06f, .92f);
+                Color color = r > .88f ? lip : r > .73f ? shadow : inner;
+                if (r > .93f && ((x + y) % 7 < 2)) color = new Color(.64f, .43f, .18f, 1f);
+                tex.SetPixel(x, y, color);
+            }
+            tex.Apply();
+            return tex;
+        }
+
+        private static Texture2D MakePlacementGrid()
+        {
+            const int w = 240, h = 180;
+            var tex = NewTexture(w, h);
+            Clear(tex);
+            var minor = new Color(1f, 1f, 1f, .22f);
+            var major = new Color(1f, 1f, 1f, .52f);
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++)
+            {
+                bool lineX = x % 10 == 0;
+                bool lineY = y % 10 == 0;
+                if (!lineX && !lineY) continue;
+                bool strong = x % 40 == 0 || y % 40 == 0;
+                tex.SetPixel(x, y, strong ? major : minor);
+            }
+            tex.Apply();
+            return tex;
+        }
+
+        private static Texture2D MakeFacilityDecor(bool commandTier)
+        {
+            const int size = 64;
+            var tex = NewTexture(size, size);
+            Clear(tex);
+            var center = new Vector2(31.5f, 31.5f);
+            int modules = commandTier ? 8 : 4;
+            for (int i = 0; i < modules; i++)
+            {
+                float angle = Mathf.PI * 2f * i / modules + (commandTier ? Mathf.PI / 8f : 0f);
+                Vector2 p = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (commandTier ? 28f : 25f);
+                int half = commandTier ? 2 : 3;
+                for (int y = -half; y <= half; y++) for (int x = -half; x <= half; x++)
+                {
+                    int px = Mathf.RoundToInt(p.x) + x;
+                    int py = Mathf.RoundToInt(p.y) + y;
+                    if (px < 0 || py < 0 || px >= size || py >= size) continue;
+                    bool edge = Mathf.Abs(x) == half || Mathf.Abs(y) == half;
+                    tex.SetPixel(px, py, edge ? new Color(0f, 0f, 0f, .85f) : Color.white);
+                }
+                if (commandTier)
+                {
+                    int tipX = Mathf.RoundToInt(center.x + Mathf.Cos(angle) * 31f);
+                    int tipY = Mathf.RoundToInt(center.y + Mathf.Sin(angle) * 31f);
+                    if (tipX >= 0 && tipY >= 0 && tipX < size && tipY < size)
+                        tex.SetPixel(tipX, tipY, Color.white);
+                }
+            }
+            tex.Apply();
+            return tex;
         }
 
         private static Texture2D MakePixel()

@@ -53,7 +53,7 @@ Time multipliers:
 - 3 juvenile bugs in the open nursery.
 - 2 eggs in the nursery; they hatch at 15 seconds.
 - No adults and no food stock.
-- Factory, barracks, hospital, and medical academy begin as unbuilt sites.
+- The factory begins as a fixed unbuilt site. Barracks, hospital, and medical academy do not exist until placed from the construction palette.
 - Quicksand and the sand-river hazard are not part of this version.
 
 ## Economy
@@ -116,7 +116,19 @@ Every bug has world-space health and age bars. Soldiers add a combat-health bar.
 
 ## Facilities
 
-All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The academy instead trains **2 / 4 / 6 doctors per batch**. Facility core visuals grow with each level.
+All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The academy instead trains **2 / 4 / 6 doctors per batch**. Facilities are hollow perimeter compounds: bugs occupy the open courtyard rather than disappearing into a solid building.
+
+### Construction grid and footprint
+
+- The fixed factory site is built in place. Barracks, hospital, and academy are dragged from the top-right construction palette onto the world.
+- Placement snaps to a **0.5-world-unit grid** inside the editable construction region from **(-8.5, -4.5)** to **(3.5, 4.5)**.
+- Every player-placed facility reserves its level-3 square footprint immediately: **4.4 × 4.4 world units**. Reserved footprints cannot overlap the nursery or another facility.
+- Actual hollow-wall radii grow by level: **1.15 / 1.50 / 1.90 world units**. The reserved maximum footprint stays unchanged, so an upgrade never collides with a neighboring structure.
+- Level 2 adds visible utility modules; level 3 adds command nodes and gold high-tier fittings. Upgrade readability is not scale-only.
+- A green/red footprint preview and the normally hidden grid are shown only during a drag. Escape or right-click cancels placement.
+- The nursery is not a building and has no wall. It is an open birth pit that wandering bugs can freely cross.
+
+The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses among four seamless sand variations on a 0.5-unit grid, while cave-edge tiles live on a separate editable layer. This is the same grid used by facility placement.
 
 ### Factory
 
@@ -185,13 +197,15 @@ All standard facilities use capacity **3 / 5 / 10** at levels 1 / 2 / 3. The aca
 
 ## Interaction Rules
 
-- Click an unbuilt site to construct it.
+- Click the fixed unbuilt factory site to construct it.
+- Drag an available barracks, hospital, or academy card from the top-right construction palette to a valid grid footprint to build it and pay its cost.
 - Shift-click a constructed facility to upgrade it.
 - Click the academy to start a doctor batch when its requirements are met.
 - Drag adults into facilities.
 - Factory workers are locked in; hospital patients can be removed; trained soldiers are released from barracks.
 - Drag a soldier to the right side to deploy it for automatic combat.
 - The right-side backpack is a scrollable 3-column grid with a 3×3 visible window and 12 scene-authored slots.
+- The top-right command dock uses Build and Loadout tabs. The Loadout page reserves armor, weapon and core sockets so future equipment does not expand over the battlefield.
 - Purchased food enters the backpack. Drag food onto a damaged bug to heal it; direct bug-click feeding remains as a convenience shortcut and consumes the same stored item.
 - Factory products enter their matching stack. Click scrap, components, or equipment to sell one item.
 - Drag elite equipment onto an unupgraded soldier to consume it and double that soldier's combat health and attack.
@@ -211,7 +225,7 @@ Recommended next content material, in priority order:
 
 1. Equipped elite-soldier idle/walk/attack sprite sheet instead of tint-only differentiation.
 2. Normal enemy level 2 plus heavy enemy walk/attack/hit sheets.
-3. Three visual construction states for every facility and a short factory-output animation.
+3. Additional hand-authored upgrade variants for every facility and a short factory-output animation. Current facility perimeters already expand at levels 2 and 3.
 4. Inventory hover cards, item descriptions, sell confirmation for rare gear, and drag feedback.
 5. A 10-minute boss/event and two alternate wave compositions to extend meaningful play toward 20 minutes.
 6. Combat, production, inventory, infection and alert sound sets.
@@ -224,5 +238,5 @@ When every living bug is dead, enter Game Over even if eggs, doctors, facilities
 
 - Elite soldier, normal robot and heavy robot animation sheets.
 - Doctor walk and cleaning sheet.
-- Three construction/upgrade variants per facility.
+- Additional construction/upgrade detail variants per facility (the current perimeter already scales for capacity).
 - Factory-output animation, infection overlay, hit sparks, and death dissolve.

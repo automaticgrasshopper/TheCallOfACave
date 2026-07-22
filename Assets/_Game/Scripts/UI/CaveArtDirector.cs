@@ -141,6 +141,9 @@ namespace TCC.UI
         {
             foreach (Image image in FindObjectsOfType<Image>(true))
             {
+                // PixelChrome may rebuild generated child rails while this edit-mode
+                // snapshot is traversed, leaving destroyed entries in the array.
+                if (image == null) continue;
                 if (image.name.Contains("Dim") || image.name.Contains("Curtain")) continue;
                 if (image.GetComponent<Button>() != null)
                 {

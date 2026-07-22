@@ -33,7 +33,8 @@ namespace TCC.UI
             if (_icon != null)
             {
                 _icon.sprite = icon;
-                _icon.enabled = occupied && icon != null;
+                _icon.enabled = icon != null;
+                _icon.color = occupied ? Color.white : new Color(.42f, .48f, .46f, .2f);
             }
             if (_count != null) _count.text = occupied ? count.ToString() : string.Empty;
             if (_background != null)
