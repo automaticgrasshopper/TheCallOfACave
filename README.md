@@ -77,6 +77,10 @@
 
 项目早期动画工作流参考 [`gorest-2d-animation-spritesheet-generator`](https://github.com/NO6KIKO/gorest-2d-animation-spritesheet-generator)；它不参与游戏运行时。
 
+## 基线测试
+
+激活 Unity 2022.3.44f1 许可证后，在仓库根目录运行 `Tools/run-baseline-smoke.sh`。入口会在临时副本中编译开发构建，并执行 360 秒主循环冒烟测试；正常游戏启动不会加载测试探针。环境、验收项和当前已知问题见 [`BASELINE_VALIDATION.md`](BASELINE_VALIDATION.md)。
+
 ## 关于 AI 助手的美术产出边界
 
 Claude Code 助手**没有内置图像生成工具**，无法凭空画出角色、设施、背景、图标一类插画。它能做的：程序化几何图（Tiles、网格、纯色/图案）、以及原图之后的整条装配链——降采样／点采样量化、切帧、Unity import 设置、接线到 Prefab。
