@@ -76,3 +76,9 @@
 使用 Unity **2022.3.44f1** 或兼容的 2022 LTS 打开 `Assets/_Game/Scenes/Main.unity`。首次导入会自动烘焙场景设施、HUD 扩展、虫体状态条和动态实体 Prefab。若关闭了 Auto Refresh，请按一次 `⌘R`。
 
 项目早期动画工作流参考 [`gorest-2d-animation-spritesheet-generator`](https://github.com/NO6KIKO/gorest-2d-animation-spritesheet-generator)；它不参与游戏运行时。
+
+## 关于 AI 助手的美术产出边界
+
+Claude Code 助手**没有内置图像生成工具**，无法凭空画出角色、设施、背景、图标一类插画。它能做的：程序化几何图（Tiles、网格、纯色/图案）、以及原图之后的整条装配链——降采样／点采样量化、切帧、Unity import 设置、接线到 Prefab。
+
+若要生成插画级 `*_raw.png`，需外部图像模型出图：gorest 走 **`GEMINI_API_KEY`**（Google Gemini，你自己的额度）或托管版 [sprite.gorest.ai](https://sprite.gorest.ai/)（登录免 key）。提供 Gemini key 后，助手可脚本调用其出图接口，从生成到入库全包。
