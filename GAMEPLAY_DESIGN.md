@@ -196,6 +196,7 @@ The battlefield itself is a scene-authored Unity Tilemap. Its Rule Tile chooses 
 - Soldier: 100 combat health, 10 attack, 3 defense. Defense subtracts from each incoming hit, with at least 1 damage always applied.
 - Robot: 110 health, 11 damage.
 - One soldier may win but is likely to die; two soldiers reliably defeat one robot.
+- Normal and heavy robots use separate four-frame walk and attack cycles. Both show a world-space health bar above the body; the fill shifts from green to amber to red as health falls, and a damage flash confirms hits.
 - Equipped soldier: 200 combat health, 20 attack, 6 defense.
 - Advanced-equipped soldier: 250 combat health, 25 attack, 7.5 defense, restored to newly adult age and full condition when equipped.
 - Heavy robot: 330 health, 22 damage, three times the normal enemy's visual size, and lower movement speed. It is intended for multiple soldiers or elite support.
@@ -239,7 +240,7 @@ The HUD clock is an independent two-row panel centered at the top of a 1920×108
 Recommended next content material, in priority order:
 
 1. Equipped elite-soldier idle/walk/attack sprite sheet instead of tint-only differentiation.
-2. Normal enemy level 2 plus heavy enemy walk/attack/hit sheets.
+2. Normal enemy level 2 plus dedicated enemy hit/death effect sheets.
 3. Additional hand-authored upgrade variants for every facility and a short factory-output animation. Current facility perimeters already expand at levels 2 and 3.
 4. Inventory hover cards, item descriptions, sell confirmation for rare gear, and drag feedback.
 5. A 10-minute boss/event and two alternate wave compositions to extend meaningful play toward 20 minutes.
@@ -251,7 +252,7 @@ When every living bug is dead, enter Game Over even if eggs, doctors, facilities
 
 ## Remaining Art Polish
 
-- Elite soldier, normal robot and heavy robot animation sheets.
+- Elite soldier idle/walk/attack sprite sheet.
 - Doctor walk and cleaning sheet.
 - Additional construction/upgrade detail variants per facility (the current perimeter already scales for capacity).
 - Factory-output animation, infection overlay, hit sparks, and death dissolve.
