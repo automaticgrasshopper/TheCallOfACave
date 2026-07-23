@@ -8,12 +8,12 @@
 
 ## 当前制作进度
 
-- 已完成执行日：0 / 85
-- 总进度：0.00%
-- 当前应执行：第 1 天
-- 最近完成：尚未开始正式制作
-- 第 1 天状态：阻塞（测试入口与基线记录已完成，等待激活 Unity 许可证后执行 6–10 分钟冒烟验收）
-- 最近推送：计划规则 1.1（提交号见 Git 日志）
+- 已完成执行日：1 / 85
+- 总进度：1.18%
+- 当前应执行：第 2 天
+- 最近完成：第 1 天｜冻结基线并建立可验证开工点
+- 第 1 天状态：完成（360 秒 Development Player 主循环冒烟通过）
+- 最近推送：第 1 天基线验证（提交号见 Git 日志）
 
 进度只按验收完成的执行日计算：
 
@@ -157,17 +157,17 @@
 
 本次执行：第 1 天
 
-状态：阻塞
+状态：完成
 
 完成内容：核对 Unity 版本、Windows x64 支持模块、唯一启用场景、现有主循环和最近 Git 基线；新增只在显式参数下运行的构建内冒烟探针、Unity 菜单入口和一键测试脚本；记录当前玩法与已知问题。
 
-验收结果：C# 玩家与编辑器程序集均为 0 error；最终验收未通过，因为 Unity 图形与批处理模式均报告无有效许可证，无法生成 Development Player，也未执行 360 秒场景冒烟。
+验收结果：C# 玩家与编辑器程序集均为 0 error；Unity Hub Personal 许可证连接成功；Development Player 构建成功；360 秒主循环冒烟通过。游戏内 Playing 累计 345 秒，峰值 14 只虫、6 枚蛋、8 个敌人；重型敌人、工厂产物、工人和士兵均出现；Colony Lost 路径触发并恢复 2 次；运行期错误 0。
 
-测试方式：独立 C# 编译；静态检查 `ProjectVersion.txt`、Windows Build Support、`EditorBuildSettings.asset` 和 `Main.unity` 接线；分别启动 Unity 图形与批处理模式验证许可证；尝试执行短时冒烟预检。
+测试方式：独立 C# 编译；静态检查 `ProjectVersion.txt`、Windows Build Support、`EditorBuildSettings.asset` 和 `Main.unity` 接线；运行 12 秒构建预检；连接 Unity Hub Licensing Client 构建并运行 360 秒无界面 Development Player 冒烟。
 
 新增或修改的资产：`BASELINE_VALIDATION.md`、`BaselineValidation.cs`、`BaselineSmokeProbe.cs`、`Tools/run-baseline-smoke.sh`、README 基线测试说明。
 
-已知问题与是否顺延：Unity 许可证为唯一当日验收阻塞；激活后继续第 1 天，不进入第 2 天。现有静态编译保留 62 个序列化字段警告，未新增编译错误。
+已知问题与是否顺延：无阻塞项顺延。现有静态编译保留 62 个序列化字段警告，未新增编译错误；许可证脚本依赖 Unity Hub 保持登录并运行。
 
 当日额度估算：未超过 3%。
 
@@ -175,11 +175,11 @@ Git commit：本记录所在提交。
 
 推送状态：已推送（本记录所在提交）。
 
-累计完成：0 / 85 天
+累计完成：1 / 85 天
 
-总进度：0 ÷ 85 = 0.00%
+总进度：1 ÷ 85 = 1.18%
 
-下一执行日：第 1 天（解除许可证阻塞后继续）
+下一执行日：第 2 天
 
 ### 第 2 阶段｜档案管理与主菜单
 

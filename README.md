@@ -79,7 +79,7 @@
 
 ## 基线测试
 
-激活 Unity 2022.3.44f1 许可证后，在仓库根目录运行 `Tools/run-baseline-smoke.sh`。入口会在临时副本中编译开发构建，并执行 360 秒主循环冒烟测试；正常游戏启动不会加载测试探针。环境、验收项和当前已知问题见 [`BASELINE_VALIDATION.md`](BASELINE_VALIDATION.md)。
+保持 Unity Hub 已登录并运行，然后在仓库根目录运行 `Tools/run-baseline-smoke.sh`。入口会自动连接 Hub 的许可证服务，在临时副本中编译开发构建，并执行 360 秒主循环冒烟测试；正常游戏启动不会加载测试探针。环境、验收项和当前已知问题见 [`BASELINE_VALIDATION.md`](BASELINE_VALIDATION.md)。
 
 ## 关于 AI 助手的美术产出边界
 

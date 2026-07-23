@@ -9,14 +9,23 @@ temp_project="$temp_root/project"
 player_path="$temp_root/The Call of the Cave.app"
 build_log="$temp_root/unity-build.log"
 smoke_log="$temp_root/smoke-player.log"
+hub_licensing_ipc="$(
+  ps -ax -o command= |
+    sed -n 's|.*UnityLicensingClient_V1.*--namedPipe Unity-\([^ ]*\).*|\1|p' |
+    head -n 1
+)"
 
 cleanup() {
   exit_code=$?
   if [[ $exit_code -ne 0 ]]; then
-    print -u2 "Baseline smoke failed. Recent build output:"
-    [[ -f "$build_log" ]] && tail -n 80 "$build_log" >&2
-    print -u2 "Recent player output:"
-    [[ -f "$smoke_log" ]] && tail -n 80 "$smoke_log" >&2
+    print -u2 "Baseline smoke failed. Relevant build output:"
+    if [[ -f "$build_log" ]]; then
+      grep -E '\[TCC Baseline\]|error CS|Exception|Error' "$build_log" | tail -n 80 >&2 || true
+    fi
+    print -u2 "Relevant player output:"
+    if [[ -f "$smoke_log" ]]; then
+      grep -E '\[TCC Baseline\]|Exception|Error|NullReference' "$smoke_log" | tail -n 80 >&2 || true
+    fi
   fi
   rm -rf "$temp_root"
 }
@@ -24,6 +33,11 @@ trap cleanup EXIT
 
 if [[ ! -x "$unity_editor" ]]; then
   print -u2 "Unity editor not found: $unity_editor"
+  exit 1
+fi
+
+if [[ -z "$hub_licensing_ipc" ]]; then
+  print -u2 "Unity Hub licensing service is not running. Open Unity Hub and sign in first."
   exit 1
 fi
 
@@ -40,6 +54,7 @@ rsync -a \
   -batchmode \
   -nographics \
   -quit \
+  -licensingIpc "$hub_licensing_ipc" \
   -projectPath "$temp_project" \
   -executeMethod TCC.EditorTools.BaselineValidation.BuildBatch \
   -tccBaselineOutput "$player_path" \

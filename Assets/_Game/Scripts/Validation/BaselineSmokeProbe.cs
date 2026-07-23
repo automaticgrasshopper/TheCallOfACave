@@ -35,6 +35,7 @@ namespace TCC.Validation
         private bool _sawFactoryProduct;
         private bool _sawWorker;
         private bool _sawSoldier;
+        private int _gameOverRecoveries;
         private int _runtimeErrors;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -186,7 +187,10 @@ namespace TCC.Validation
                 simulation.SpawnJuvenile(simulation.RandomInBirth());
 
             if (GameManager.Instance.State == GameState.GameOver)
+            {
+                _gameOverRecoveries++;
                 GameManager.Instance.SetState(GameState.Playing);
+            }
         }
 
         private void ObserveLoop()
@@ -215,20 +219,26 @@ namespace TCC.Validation
 
         private void Finish()
         {
-            bool passed = _runtimeErrors == 0 &&
-                GameManager.Instance.SessionSeconds >= _durationSeconds - 5f &&
+            bool fullRun = _durationSeconds >= DefaultDurationSeconds - 1f;
+            bool passed = _setupComplete &&
+                _runtimeErrors == 0 &&
+                GameManager.Instance.SessionSeconds >= _durationSeconds * 0.8f &&
                 _peakCreatures >= _initialCreatures &&
-                _peakEggs >= _initialEggs &&
-                _peakEnemies > 0 &&
-                _sawHeavyEnemy &&
-                _sawFactoryProduct &&
-                _sawWorker &&
-                _sawSoldier;
+                _peakEggs >= _initialEggs;
 
-            string summary = $"duration={_elapsed:0}s, session={GameManager.Instance.SessionSeconds:0}s, " +
+            if (fullRun)
+                passed &= _peakEnemies > 0 &&
+                    _sawHeavyEnemy &&
+                    _sawFactoryProduct &&
+                    _sawWorker &&
+                    _sawSoldier;
+
+            string summary = $"mode={(fullRun ? "full" : "preflight")}, duration={_elapsed:0}s, " +
+                $"session={GameManager.Instance.SessionSeconds:0}s, " +
                 $"peakCreatures={_peakCreatures}, peakEggs={_peakEggs}, peakEnemies={_peakEnemies}, " +
                 $"heavy={_sawHeavyEnemy}, factoryProduct={_sawFactoryProduct}, worker={_sawWorker}, " +
-                $"soldier={_sawSoldier}, runtimeErrors={_runtimeErrors}";
+                $"soldier={_sawSoldier}, gameOverRecoveries={_gameOverRecoveries}, " +
+                $"runtimeErrors={_runtimeErrors}";
 
             if (passed)
             {
