@@ -17,6 +17,8 @@ namespace TCC.Core
         // ---- Flow ---------------------------------------------------------
         public static event Action<GameState> GameStateChanged;
         public static void RaiseGameStateChanged(GameState s) => GameStateChanged?.Invoke(s);
+        public static event Action<string> SaveRequested;
+        public static void RaiseSaveRequested(string reason) => SaveRequested?.Invoke(reason);
 
         // ---- Localization -------------------------------------------------
         public static event Action<Language> LanguageChanged;

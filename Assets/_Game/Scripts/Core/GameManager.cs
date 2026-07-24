@@ -43,6 +43,11 @@ namespace TCC.Core
 
         public string FormatColonyYear() => ColonyYear.ToString("D4");
 
+        public void RestoreSessionSeconds(double seconds)
+        {
+            SessionSeconds = Mathf.Max(0f, (float)seconds);
+        }
+
         protected override void OnAwake()
         {
             // Managers configure themselves in their own Awake. We only kick the

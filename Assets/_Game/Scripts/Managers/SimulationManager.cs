@@ -3,6 +3,7 @@ using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Gameplay;
+using TCC.Persistence;
 using TCC.UI;
 
 namespace TCC.Managers
@@ -39,6 +40,7 @@ namespace TCC.Managers
         private readonly List<ColonyFacility> _facilities = new List<ColonyFacility>(8);
         private float _invasionTimer;
         private int _waveIndex;
+        private int _persistentRandomSeed;
 
         public SimulationConfig Config => _config;
         public LaborZone Labor => _labor;
@@ -48,11 +50,14 @@ namespace TCC.Managers
         public IReadOnlyList<Creature> Creatures => _creatures;
         public int CreatureCount => _creatures.Count;
         public int EggCount => _eggs.Count;
+        public int PersistentRandomSeed => _persistentRandomSeed;
 
         public void RegisterBarracks(BarracksZone barracks) => _barracks = barracks;
 
         private void Start()
         {
+            if (_persistentRandomSeed == 0)
+                _persistentRandomSeed = Random.Range(1, int.MaxValue);
             _facilities.Clear();
             _facilities.AddRange(FindObjectsOfType<ColonyFacility>(true));
             SpawnInitialPopulation();
@@ -99,13 +104,14 @@ namespace TCC.Managers
             return creature;
         }
 
-        private void SpawnEgg(Vector2 pos, bool notify)
+        private Egg SpawnEgg(Vector2 pos, bool notify)
         {
-            if (_eggPrefab == null || _eggs.Count >= _config.maxEggs) return;
+            if (_eggPrefab == null || _eggs.Count >= _config.maxEggs) return null;
             var egg = Instantiate(_eggPrefab, pos, Quaternion.identity, _worldRoot);
             egg.Init(this, _config);
             _eggs.Add(egg);
             if (notify) GameEvents.RaiseEggLaid(pos);
+            return egg;
         }
 
         public void LayEgg(Vector2 pos) => SpawnEgg(ClampToActivity(pos + Random.insideUnitCircle * .35f), true);
@@ -340,6 +346,103 @@ namespace TCC.Managers
         public void RegisterFacility(ColonyFacility facility)
         {
             if (facility != null && !_facilities.Contains(facility)) _facilities.Add(facility);
+        }
+
+        public void CaptureSnapshot(WorldSnapshot snapshot)
+        {
+            if (snapshot == null) throw new System.ArgumentNullException(nameof(snapshot));
+
+            snapshot.randomSeed = _persistentRandomSeed == 0 ? 1 : _persistentRandomSeed;
+            foreach (Creature creature in _creatures)
+                if (creature != null && creature.Alive)
+                    snapshot.creatures.Add(creature.CaptureSnapshot());
+            foreach (Egg egg in _eggs)
+                if (egg != null)
+                    snapshot.eggs.Add(egg.CaptureSnapshot());
+            foreach (ColonyFacility facility in _facilities)
+                if (facility != null && facility.IsBuilt && !facility.IsPlacementPreview)
+                    snapshot.facilities.Add(facility.CaptureSnapshot());
+
+            snapshot.timers.Add(new PersistentTimerSnapshot
+            {
+                id = "simulation.invasion",
+                elapsedSeconds = _invasionTimer,
+                counter = _waveIndex
+            });
+        }
+
+        public void RestoreSnapshot(WorldSnapshot snapshot)
+        {
+            if (snapshot == null) throw new System.ArgumentNullException(nameof(snapshot));
+
+            DisableAndDestroy(_creatures);
+            DisableAndDestroy(_eggs);
+            DisableAndDestroy(_enemies);
+            DisableAndDestroy(_foods);
+            DisableAndDestroy(_contaminations);
+            DisableAndDestroy(_doctors);
+            _creatures.Clear();
+            _eggs.Clear();
+            _enemies.Clear();
+            _foods.Clear();
+            _contaminations.Clear();
+            _doctors.Clear();
+            _facilities.Clear();
+
+            _persistentRandomSeed = snapshot.randomSeed;
+            Random.InitState(_persistentRandomSeed);
+
+            Dictionary<string, ColonyFacility> facilities =
+                BuildingPlacementManager.Exists
+                    ? BuildingPlacementManager.Instance.RestoreFacilities(snapshot.facilities)
+                    : new Dictionary<string, ColonyFacility>();
+            var creatures = new Dictionary<string, Creature>();
+
+            foreach (CreatureSnapshot creatureSnapshot in snapshot.creatures)
+            {
+                Creature creature = SpawnCreature(
+                    creatureSnapshot.position.ToVector2(),
+                    0f,
+                    false);
+                if (creature == null)
+                    throw new System.InvalidOperationException("Unable to restore creature.");
+
+                creature.RestoreSnapshot(creatureSnapshot);
+                creatures.Add(creatureSnapshot.id, creature);
+            }
+
+            foreach (EggSnapshot eggSnapshot in snapshot.eggs)
+            {
+                Egg egg = SpawnEgg(eggSnapshot.position.ToVector2(), false);
+                if (egg == null)
+                    throw new System.InvalidOperationException("Unable to restore egg.");
+                egg.RestoreSnapshot(eggSnapshot);
+            }
+
+            foreach (FacilitySnapshot facilitySnapshot in snapshot.facilities)
+            {
+                if (!facilities.TryGetValue(facilitySnapshot.id, out ColonyFacility facility))
+                    continue;
+                foreach (FacilityOccupantSnapshot occupant in facilitySnapshot.occupants)
+                    if (creatures.TryGetValue(occupant.creatureId, out Creature creature))
+                        facility.RestoreOccupant(creature, occupant.taskTimerSeconds);
+            }
+
+            PersistentTimerSnapshot invasion = snapshot.timers.Find(timer =>
+                timer != null && timer.id == "simulation.invasion");
+            _invasionTimer = invasion != null ? (float)invasion.elapsedSeconds : 0f;
+            _waveIndex = invasion != null ? invasion.counter : 0;
+            BroadcastPopulation();
+        }
+
+        private static void DisableAndDestroy<T>(List<T> entities) where T : Component
+        {
+            foreach (T entity in entities)
+            {
+                if (entity == null) continue;
+                entity.gameObject.SetActive(false);
+                Destroy(entity.gameObject);
+            }
         }
         public void NotifyStageChanged() => BroadcastPopulation();
         public void RemoveEgg(Egg egg) => _eggs.Remove(egg);

@@ -3,6 +3,7 @@ using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Managers;
+using TCC.Persistence;
 using TCC.UI;
 using TMPro;
 
@@ -42,6 +43,8 @@ namespace TCC.Gameplay
         private SpriteRenderer _healthFill;
         private SpriteRenderer _statusBack;
         private FacilityInfoPanel _infoPanel;
+        private string _persistentId;
+        private bool _restoredFromSnapshot;
         private static Sprite _statusPixel;
 
         public FacilityType Type => _type;
@@ -65,6 +68,14 @@ namespace TCC.Gameplay
         }
         public float StructureHealthNormalized => MaxStructureHealth > 0f
             ? Mathf.Clamp01(StructureHealth / MaxStructureHealth) : 0f;
+        public string PersistentId
+        {
+            get
+            {
+                EnsurePersistentId();
+                return _persistentId;
+            }
+        }
         public int OccupantCount
         {
             get
@@ -114,7 +125,8 @@ namespace TCC.Gameplay
 
         private void Start()
         {
-            if (IsBuilt) ResetStructureHealth();
+            EnsurePersistentId();
+            if (IsBuilt && !_restoredFromSnapshot) ResetStructureHealth();
             ConfigureWorldLabel();
             EnsureHealthBar();
             var panelPrefab = Resources.Load<FacilityInfoPanel>("UI/FacilityInfoPanel");
@@ -172,12 +184,72 @@ namespace TCC.Gameplay
 
         public void CommitPlacement()
         {
+            EnsurePersistentId();
             _placementPreview = false;
             _level = 1;
             ResetStructureHealth();
             var collider = GetComponent<Collider2D>();
             if (collider != null) collider.enabled = true;
             RefreshVisual();
+        }
+
+        public FacilitySnapshot CaptureSnapshot()
+        {
+            EnsurePersistentId();
+            Cleanup();
+            var snapshot = new FacilitySnapshot
+            {
+                id = _persistentId,
+                facilityType = _type,
+                position = WorldPosition.From(transform.position),
+                level = _level,
+                structureHealth = StructureHealth,
+                academyTimerSeconds = _academyTimer
+            };
+
+            foreach (Slot slot in _slots)
+                if (slot.creature != null)
+                    snapshot.occupants.Add(new FacilityOccupantSnapshot
+                    {
+                        creatureId = slot.creature.PersistentId,
+                        taskTimerSeconds = Mathf.Max(0f, slot.timer)
+                    });
+            return snapshot;
+        }
+
+        public void RestoreSnapshot(FacilitySnapshot snapshot)
+        {
+            if (snapshot == null) throw new System.ArgumentNullException(nameof(snapshot));
+            _persistentId = snapshot.id;
+            _restoredFromSnapshot = true;
+            _placementPreview = false;
+            _type = snapshot.facilityType;
+            transform.position = snapshot.position.ToVector2();
+            _level = snapshot.level;
+            _structureHealth = snapshot.structureHealth;
+            _academyTimer = snapshot.academyTimerSeconds;
+            _slots.Clear();
+            var collider = GetComponent<Collider2D>();
+            if (collider != null) collider.enabled = true;
+            RefreshVisual();
+            RefreshHealthBar();
+        }
+
+        public void RestoreOccupant(Creature creature, float taskTimerSeconds)
+        {
+            if (creature == null) throw new System.ArgumentNullException(nameof(creature));
+            _slots.Add(new Slot
+            {
+                creature = creature,
+                timer = Mathf.Max(0f, taskTimerSeconds)
+            });
+            creature.RestoreFacilityAssignment(this);
+        }
+
+        private void EnsurePersistentId()
+        {
+            if (string.IsNullOrEmpty(_persistentId))
+                _persistentId = System.Guid.NewGuid().ToString("N");
         }
 
         public bool Contains(Vector2 point) => (point - Center).sqrMagnitude <= _radius * _radius;
@@ -271,6 +343,7 @@ namespace TCC.Gameplay
             ResetStructureHealth();
             RefreshVisual();
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastBuilt);
+            GameEvents.RaiseSaveRequested("facility-built");
         }
 
         private void TryUpgrade()
@@ -294,6 +367,7 @@ namespace TCC.Gameplay
             ResetStructureHealth();
             RefreshVisual();
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastUpgraded);
+            GameEvents.RaiseSaveRequested("facility-upgraded");
         }
 
         private void TryStartDoctorBatch()

@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Gameplay;
+using TCC.Persistence;
 using TCC.UI;
 
 namespace TCC.Managers
@@ -21,6 +23,31 @@ namespace TCC.Managers
         }
 
         public int Count(InventoryItemType type) => _counts[(int)type];
+
+        public void CaptureStacks(List<InventoryStackSnapshot> destination)
+        {
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            foreach (InventoryItemType type in Enum.GetValues(typeof(InventoryItemType)))
+                destination.Add(new InventoryStackSnapshot
+                {
+                    id = "inventory." + type.ToString().ToLowerInvariant(),
+                    itemType = type,
+                    count = Count(type)
+                });
+        }
+
+        public void RestoreStacks(IReadOnlyList<InventoryStackSnapshot> stacks)
+        {
+            Array.Clear(_counts, 0, _counts.Length);
+            if (stacks != null)
+                foreach (InventoryStackSnapshot stack in stacks)
+                    if (stack != null && Enum.IsDefined(typeof(InventoryItemType), stack.itemType))
+                        _counts[(int)stack.itemType] = Mathf.Max(0, stack.count);
+
+            Changed?.Invoke();
+            GameEvents.RaiseInventoryChanged();
+            GameEvents.RaiseFoodChanged(Count(InventoryItemType.Food));
+        }
 
         public void Add(InventoryItemType type, int amount = 1)
         {

@@ -2,6 +2,7 @@ using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Managers;
+using TCC.Persistence;
 using TCC.UI;
 
 namespace TCC.Gameplay
@@ -43,6 +44,7 @@ namespace TCC.Gameplay
         private bool _eliteSoldier;
         private bool _advancedSoldier;
         private string _code;
+        private string _persistentId;
         private DroppedFood _foodTarget;
         private Vector2 _facilityWanderTarget;
         private CreatureInfoPanel _infoPanel;
@@ -72,6 +74,7 @@ namespace TCC.Gameplay
         public ColonyFacility Facility => _facility;
         public bool Alive => _health > 0f;
         public bool CanEat => Alive && _hunger < 99.5f;
+        public string PersistentId => _persistentId;
 
         public string InfoText
         {
@@ -115,6 +118,8 @@ namespace TCC.Gameplay
             _hunger = 100f;
             _code = GenerateCode();
             _combatHealth = cfg.soldierMaxHealth;
+            if (string.IsNullOrEmpty(_persistentId))
+                _persistentId = System.Guid.NewGuid().ToString("N");
             _layTimer = Random.Range(cfg.firstEggMinSeconds, cfg.eggLayIntervalSeconds);
             _wobblePhase = Random.value * Mathf.PI * 2f;
             PickWander();
@@ -130,6 +135,66 @@ namespace TCC.Gameplay
             }
             _infoPanel.transform.localPosition = new Vector3(0f, 1.28f, 0f);
             _infoPanel.Init(this);
+        }
+
+        public CreatureSnapshot CaptureSnapshot()
+        {
+            if (string.IsNullOrEmpty(_persistentId))
+                _persistentId = System.Guid.NewGuid().ToString("N");
+
+            return new CreatureSnapshot
+            {
+                id = _persistentId,
+                position = WorldPosition.From(transform.position),
+                stage = _stage,
+                role = _role,
+                facilityId = _facility != null ? _facility.PersistentId : string.Empty,
+                ageSeconds = _age,
+                lifespanSeconds = _lifespan,
+                elderStartAgeSeconds = _elderStartAge,
+                productionEfficiency = _productionEfficiency,
+                health = _health,
+                hunger = _hunger,
+                combatHealth = _combatHealth,
+                layTimerSeconds = Mathf.Max(0f, _layTimer),
+                infected = _infected,
+                eliteSoldier = _eliteSoldier,
+                advancedSoldier = _advancedSoldier,
+                code = _code
+            };
+        }
+
+        public void RestoreSnapshot(CreatureSnapshot snapshot)
+        {
+            if (snapshot == null) throw new System.ArgumentNullException(nameof(snapshot));
+
+            _persistentId = snapshot.id;
+            transform.position = snapshot.position.ToVector2();
+            _stage = snapshot.stage;
+            _role = snapshot.role;
+            _roleBeforeHospital = CreatureRole.Free;
+            _facility = null;
+            _age = snapshot.ageSeconds;
+            _lifespan = snapshot.lifespanSeconds;
+            _elderStartAge = snapshot.elderStartAgeSeconds;
+            _productionEfficiency = snapshot.productionEfficiency;
+            _health = snapshot.health;
+            _hunger = snapshot.hunger;
+            _combatHealth = snapshot.combatHealth;
+            _layTimer = snapshot.layTimerSeconds;
+            _infected = snapshot.infected;
+            _eliteSoldier = snapshot.eliteSoldier;
+            _advancedSoldier = snapshot.advancedSoldier;
+            _code = snapshot.code;
+            RefreshBaseSprite();
+            _bars?.Set(Health01, _age / Mathf.Max(.01f, _lifespan),
+                IsSoldier ? _combatHealth / Mathf.Max(.01f, SoldierMaxHealth) : -1f);
+        }
+
+        public void RestoreFacilityAssignment(ColonyFacility facility)
+        {
+            _facility = facility;
+            RefreshBaseSprite();
         }
 
         private static string GenerateCode()

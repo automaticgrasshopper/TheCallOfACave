@@ -2,6 +2,7 @@ using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Managers;
+using TCC.Persistence;
 using TCC.UI;
 
 namespace TCC.Gameplay
@@ -21,6 +22,7 @@ namespace TCC.Gameplay
         private Vector3 _baseScale;
         private bool _consumed;
         private bool _dragging;
+        private string _persistentId;
         private static Sprite _pixelEggSprite;
         private static bool _pixelEggLoaded;
 
@@ -37,6 +39,31 @@ namespace TCC.Gameplay
             _hatch = _hatchDuration;
             _phase = Random.value * Mathf.PI * 2f;
             _baseScale = transform.localScale;
+            if (string.IsNullOrEmpty(_persistentId))
+                _persistentId = System.Guid.NewGuid().ToString("N");
+        }
+
+        public EggSnapshot CaptureSnapshot()
+        {
+            if (string.IsNullOrEmpty(_persistentId))
+                _persistentId = System.Guid.NewGuid().ToString("N");
+
+            return new EggSnapshot
+            {
+                id = _persistentId,
+                position = WorldPosition.From(transform.position),
+                hatchRemainingSeconds = Mathf.Max(0f, _hatch),
+                hatchDurationSeconds = Mathf.Max(.01f, _hatchDuration)
+            };
+        }
+
+        public void RestoreSnapshot(EggSnapshot snapshot)
+        {
+            if (snapshot == null) throw new System.ArgumentNullException(nameof(snapshot));
+            _persistentId = snapshot.id;
+            transform.position = snapshot.position.ToVector2();
+            _hatch = snapshot.hatchRemainingSeconds;
+            _hatchDuration = snapshot.hatchDurationSeconds;
         }
 
         private static Sprite PixelEggSprite

@@ -67,6 +67,24 @@ namespace TCC.Persistence
             throw BuildCorruptionException($"profile {profileId}", primaryException, backupException);
         }
 
+        public WorldSnapshotLoadResult LoadWorldSnapshot(string profileId)
+        {
+            ValidateProfileId(profileId);
+            string primaryPath = GetWorldSnapshotPath(profileId);
+            string backupPath = GetWorldSnapshotBackupPath(profileId);
+
+            Exception primaryException = null;
+            if (TryReadWorldSnapshot(primaryPath, out WorldSnapshot primary, out primaryException))
+                return new WorldSnapshotLoadResult(primary, false, null);
+            if (TryReadWorldSnapshot(backupPath, out WorldSnapshot backup, out Exception backupException))
+                return new WorldSnapshotLoadResult(backup, true, Describe(primaryException));
+
+            throw BuildCorruptionException(
+                $"world snapshot for profile {profileId}",
+                primaryException,
+                backupException);
+        }
+
         public void SaveProfile(PlayerProfile profile)
         {
             if (profile == null) throw new ArgumentNullException(nameof(profile));
@@ -99,6 +117,22 @@ namespace TCC.Persistence
                 path => TryReadIndex(path, out _, out _));
         }
 
+        public void SaveWorldSnapshot(string profileId, WorldSnapshot snapshot)
+        {
+            ValidateProfileId(profileId);
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            snapshot.EnsureValid();
+            if (!string.Equals(profileId, snapshot.profileId, StringComparison.Ordinal))
+                throw new InvalidOperationException("World snapshot belongs to another profile.");
+
+            EnsureDirectories();
+            AtomicWrite(
+                GetWorldSnapshotPath(profileId),
+                GetWorldSnapshotBackupPath(profileId),
+                WorldSnapshotJson.Serialize(snapshot, true),
+                path => TryReadWorldSnapshot(path, out _, out _));
+        }
+
         public string GetProfilePath(string profileId)
         {
             ValidateProfileId(profileId);
@@ -108,6 +142,17 @@ namespace TCC.Persistence
         public string GetProfileBackupPath(string profileId)
         {
             return GetProfilePath(profileId) + BackupSuffix;
+        }
+
+        public string GetWorldSnapshotPath(string profileId)
+        {
+            ValidateProfileId(profileId);
+            return Path.Combine(_dataDirectory, profileId + ".world.json");
+        }
+
+        public string GetWorldSnapshotBackupPath(string profileId)
+        {
+            return GetWorldSnapshotPath(profileId) + BackupSuffix;
         }
 
         private void EnsureDirectories()
@@ -208,6 +253,28 @@ namespace TCC.Persistence
                     throw new InvalidDataException("Profile index JSON produced no model.");
 
                 index.EnsureValid();
+                return true;
+            }
+            catch (Exception caught)
+            {
+                exception = caught;
+                return false;
+            }
+        }
+
+        private static bool TryReadWorldSnapshot(
+            string path,
+            out WorldSnapshot snapshot,
+            out Exception exception)
+        {
+            snapshot = null;
+            exception = null;
+            try
+            {
+                if (!File.Exists(path))
+                    throw new FileNotFoundException("World snapshot does not exist.", path);
+
+                snapshot = WorldSnapshotJson.Deserialize(File.ReadAllText(path, Encoding.UTF8));
                 return true;
             }
             catch (Exception caught)

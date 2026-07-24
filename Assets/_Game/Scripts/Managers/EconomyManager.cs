@@ -50,6 +50,12 @@ namespace TCC.Managers
 
         public bool CanAfford(int amount) => Money >= amount;
 
+        public void RestoreMoney(int amount)
+        {
+            Money = Mathf.Max(0, amount);
+            GameEvents.RaiseMoneyChanged(Money);
+        }
+
         public void TryBuyFood()
         {
             Spend(_config != null ? _config.buyFoodCost : 0, ok =>

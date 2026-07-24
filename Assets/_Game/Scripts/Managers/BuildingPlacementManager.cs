@@ -4,6 +4,7 @@ using UnityEngine;
 using TCC.Core;
 using TCC.Data;
 using TCC.Gameplay;
+using TCC.Persistence;
 using TCC.UI;
 
 namespace TCC.Managers
@@ -25,6 +26,8 @@ namespace TCC.Managers
 
         public event Action AvailabilityChanged;
         public bool IsPlacing => _preview != null;
+        public int BuiltFacilityCount => _placed.FindAll(facility =>
+            facility != null && facility.IsBuilt).Count;
 
         private void Start()
         {
@@ -128,7 +131,46 @@ namespace TCC.Managers
             SetGridVisible(false);
             ToastView.Instance?.Key(LocalizationTable.Keys.ToastBuilt);
             AvailabilityChanged?.Invoke();
+            GameEvents.RaiseSaveRequested("facility-built");
             return true;
+        }
+
+        public Dictionary<string, ColonyFacility> RestoreFacilities(
+            IReadOnlyList<FacilitySnapshot> snapshots)
+        {
+            foreach (ColonyFacility facility in _placed)
+            {
+                if (facility == null) continue;
+                facility.gameObject.SetActive(false);
+                Destroy(facility.gameObject);
+            }
+            _placed.Clear();
+
+            var restored = new Dictionary<string, ColonyFacility>(StringComparer.Ordinal);
+            if (snapshots == null) return restored;
+
+            foreach (FacilitySnapshot snapshot in snapshots)
+            {
+                ColonyFacility prefab = PrefabFor(snapshot.facilityType);
+                if (prefab == null)
+                    throw new InvalidOperationException(
+                        $"Missing facility prefab for {snapshot.facilityType}.");
+
+                ColonyFacility facility = Instantiate(
+                    prefab,
+                    snapshot.position.ToVector2(),
+                    Quaternion.identity,
+                    _worldRoot);
+                facility.RestoreSnapshot(snapshot);
+                _placed.Add(facility);
+                restored.Add(snapshot.id, facility);
+                if (SimulationManager.Exists)
+                    SimulationManager.Instance.RegisterFacility(facility);
+            }
+
+            SetGridVisible(false);
+            AvailabilityChanged?.Invoke();
+            return restored;
         }
 
         public void CancelPlacement()
