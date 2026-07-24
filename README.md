@@ -81,6 +81,10 @@
 
 保持 Unity Hub 已登录并运行，然后在仓库根目录运行 `Tools/run-baseline-smoke.sh`。入口会自动连接 Hub 的许可证服务，在临时副本中编译开发构建，并执行 360 秒主循环冒烟测试；正常游戏启动不会加载测试探针。环境、验收项和当前已知问题见 [`BASELINE_VALIDATION.md`](BASELINE_VALIDATION.md)。
 
+## 档案领域模型测试
+
+保持 Unity Hub 已登录并运行，然后在仓库根目录运行 `Tools/run-profile-domain-tests.sh`。入口会在临时项目副本中编译代码，并验证档案 ID、双姓名、累计时长、纪元、教程状态、结构版本和时间戳经过 JSON 序列化往返后完整保留。
+
 ## 关于 AI 助手的美术产出边界
 
 Claude Code 助手**没有内置图像生成工具**，无法凭空画出角色、设施、背景、图标一类插画。它能做的：程序化几何图（Tiles、网格、纯色/图案）、以及原图之后的整条装配链——降采样／点采样量化、切帧、Unity import 设置、接线到 Prefab。
