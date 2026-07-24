@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using TCC.Core;
 using TCC.Gameplay;
@@ -145,8 +146,40 @@ namespace TCC.Validation
         private void ExerciseOpeningLoop()
         {
             GameEvents.RaiseMoneyEarned(5000);
-            BuildFacility(FacilityType.Factory, new Vector2(-5.5f, 2f));
+            ExercisePlacementAndDestructionRegression();
             BuildFacility(FacilityType.Barracks, new Vector2(-1f, 2f));
+        }
+
+        private static void ExercisePlacementAndDestructionRegression()
+        {
+            var placement = BuildingPlacementManager.Instance;
+            var cfg = SimulationManager.Instance.Config;
+
+            BuildFacility(FacilityType.Factory,
+                new Vector2(cfg.buildingAreaMin.x, cfg.buildingAreaMax.y));
+            var factory = FindObjectsOfType<ColonyFacility>()
+                .FirstOrDefault(facility => facility.Type == FacilityType.Factory && facility.IsBuilt);
+            if (factory == null)
+                throw new InvalidOperationException("Edge placement did not create the factory.");
+
+            TMP_Text facilityLabel = factory.transform.Find("Facility Label")?.GetComponent<TMP_Text>();
+            if (facilityLabel == null || facilityLabel.transform.localScale.x < .085f)
+                throw new InvalidOperationException("Facility world label is still below the readable scale.");
+
+            factory.TakeDamage(factory.MaxStructureHealth + 1f);
+            if (factory.gameObject.activeSelf || placement.BuiltFacilityCount != 0 ||
+                !placement.CanBuild(FacilityType.Factory))
+                throw new InvalidOperationException(
+                    "Destroyed level-1 facility was not fully removed from placement state.");
+
+            BuildFacility(FacilityType.Factory,
+                new Vector2(cfg.buildingAreaMax.x, cfg.buildingAreaMin.y));
+
+            TMP_Text nurseryLabel = GameObject.Find("Nursery Label")?.GetComponent<TMP_Text>();
+            if (nurseryLabel == null || nurseryLabel.transform.localScale.x < .085f)
+                throw new InvalidOperationException("Nursery world label is still below the readable scale.");
+
+            Debug.Log("[TCC Baseline] Placement bounds, readable labels, destruction and rebuild verified.");
         }
 
         private static void BuildFacility(FacilityType type, Vector2 worldPosition)

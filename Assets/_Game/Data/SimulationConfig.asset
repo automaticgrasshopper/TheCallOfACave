@@ -50,8 +50,8 @@ MonoBehaviour:
   facilityLevel1Radius: 1.15
   facilityLevel2Radius: 1.5
   facilityLevel3Radius: 1.9
-  buildingAreaMin: {x: -8.5, y: -4.5}
-  buildingAreaMax: {x: 3.5, y: 4.5}
+  buildingAreaMin: {x: -9.5, y: -5}
+  buildingAreaMax: {x: 3.5, y: 5}
   factoryLevel1Interval: 8
   factoryLevel2Interval: 7
   factoryLevel3Interval: 12

@@ -130,7 +130,7 @@ namespace TCC.EditorTools
                 LocalizationTable.Keys.ZoneNursery);
 
             var gridGo = Child(world, "Placement Grid Overlay");
-            gridGo.transform.localPosition = new Vector3(-2.5f, 0f, 0f);
+            gridGo.transform.localPosition = new Vector3(-3f, 0f, 0f);
             gridGo.transform.localScale = Vector3.one;
             var gridRenderer = Component<SpriteRenderer>(gridGo);
             gridRenderer.sprite = grid;
@@ -981,7 +981,7 @@ namespace TCC.EditorTools
         {
             var go = Child(parent, name);
             go.transform.localPosition = position;
-            go.transform.localScale = Vector3.one * .06f;
+            go.transform.localScale = Vector3.one * .09f;
             var text = Component<TextMeshPro>(go);
             var loc = Object.FindObjectOfType<LocalizationManager>();
             if (loc != null && loc.Font != null) text.font = loc.Font;
@@ -1267,7 +1267,7 @@ namespace TCC.EditorTools
 
         private static Texture2D MakePlacementGrid()
         {
-            const int w = 240, h = 180;
+            const int w = 260, h = 200;
             var tex = NewTexture(w, h);
             Clear(tex);
             var minor = new Color(1f, 1f, 1f, .22f);

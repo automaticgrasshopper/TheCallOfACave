@@ -188,6 +188,7 @@ namespace TCC.Gameplay
             _placementPreview = false;
             _level = 1;
             ResetStructureHealth();
+            ConfigureWorldLabel();
             var collider = GetComponent<Collider2D>();
             if (collider != null) collider.enabled = true;
             RefreshVisual();
@@ -503,6 +504,14 @@ namespace TCC.Gameplay
                 }
                 _slots.Clear();
                 _academyTimer = -1f;
+                if (BuildingPlacementManager.Exists)
+                    BuildingPlacementManager.Instance.RemoveFacility(this);
+                if (SimulationManager.Exists)
+                    SimulationManager.Instance.RemoveFacility(this);
+                GameEvents.RaiseSaveRequested("facility-destroyed");
+                gameObject.SetActive(false);
+                Destroy(gameObject);
+                return;
             }
             else
             {
@@ -554,7 +563,7 @@ namespace TCC.Gameplay
             _label.raycastTarget = false;
             var rect = _label.rectTransform;
             rect.sizeDelta = new Vector2(56f, 7f);
-            rect.localScale = Vector3.one * .06f;
+            rect.localScale = Vector3.one * .09f;
             RefreshWorldLabel();
         }
 
@@ -567,8 +576,8 @@ namespace TCC.Gameplay
             _statusBack.enabled = visible;
             if (visible)
             {
-                _statusBack.transform.localPosition = new Vector3(0f, _radius + .48f, .01f);
-                _statusBack.transform.localScale = new Vector3(3.4f, .42f, 1f);
+                _statusBack.transform.localPosition = new Vector3(0f, _radius + .62f, .01f);
+                _statusBack.transform.localScale = new Vector3(4.6f, .62f, 1f);
             }
             if (!visible || !LocalizationManager.Exists) return;
             var loc = LocalizationManager.Instance;
@@ -689,7 +698,7 @@ namespace TCC.Gameplay
                 _level3Decor.color = new Color(1f, .76f, .27f, .96f);
             }
             if (_label != null)
-                _label.transform.localPosition = new Vector3(0f, _radius + .48f, 0f);
+                _label.transform.localPosition = new Vector3(0f, _radius + .62f, 0f);
             if (_progressBack != null)
                 _progressBack.transform.localPosition = new Vector3(0f, _radius + .14f, 0f);
             var collider = GetComponent<CircleCollider2D>();

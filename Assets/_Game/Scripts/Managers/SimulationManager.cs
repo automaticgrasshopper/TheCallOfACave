@@ -347,6 +347,7 @@ namespace TCC.Managers
         {
             if (facility != null && !_facilities.Contains(facility)) _facilities.Add(facility);
         }
+        public void RemoveFacility(ColonyFacility facility) => _facilities.Remove(facility);
 
         public void CaptureSnapshot(WorldSnapshot snapshot)
         {

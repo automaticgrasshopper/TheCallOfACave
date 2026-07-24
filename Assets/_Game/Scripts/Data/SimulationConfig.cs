@@ -75,8 +75,9 @@ namespace TCC.Data
         public float facilityLevel1Radius = 1.15f;
         public float facilityLevel2Radius = 1.5f;
         public float facilityLevel3Radius = 1.9f;
-        public Vector2 buildingAreaMin = new Vector2(-8.5f, -4.5f);
-        public Vector2 buildingAreaMax = new Vector2(3.5f, 4.5f);
+        [Tooltip("Placement-center bounds for the visible world left of the command sidebar.")]
+        public Vector2 buildingAreaMin = new Vector2(-9.5f, -5f);
+        public Vector2 buildingAreaMax = new Vector2(3.5f, 5f);
         [Tooltip("Level 1 makes basic parts, level 2 makes intermediate parts, level 3 randomly makes one of two advanced parts.")]
         public float factoryLevel1Interval = 8f;
         public float factoryLevel2Interval = 7f;

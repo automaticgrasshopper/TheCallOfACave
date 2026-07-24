@@ -6,6 +6,7 @@ using TCC.Data;
 using TCC.Gameplay;
 using TCC.Persistence;
 using TCC.UI;
+using TMPro;
 
 namespace TCC.Managers
 {
@@ -34,6 +35,8 @@ namespace TCC.Managers
             _placed.Clear();
             foreach (var facility in FindObjectsOfType<ColonyFacility>(true))
                 if (facility != null && !facility.IsPlacementPreview) _placed.Add(facility);
+            AlignGridOverlay();
+            EnsureNurseryLabelReadable();
             SetGridVisible(false);
             AvailabilityChanged?.Invoke();
         }
@@ -47,6 +50,7 @@ namespace TCC.Managers
         public bool CanBuild(FacilityType type)
         {
             if (!IsUnlocked(type) || PrefabFor(type) == null) return false;
+            _placed.RemoveAll(facility => facility == null || !facility.IsBuilt);
             foreach (var facility in _placed)
                 if (facility != null && facility.Type == type) return false;
             return true;
@@ -180,20 +184,32 @@ namespace TCC.Managers
             SetGridVisible(false);
         }
 
+        public void RemoveFacility(ColonyFacility facility)
+        {
+            if (facility == null) return;
+            bool removed = _placed.Remove(facility);
+            if (removed) AvailabilityChanged?.Invoke();
+        }
+
         private bool IsValidPlacement(Vector2 center)
         {
             var cfg = SimulationManager.Instance.Config;
-            float half = cfg.buildingReservedHalfExtent;
-            if (center.x - half < cfg.buildingAreaMin.x || center.y - half < cfg.buildingAreaMin.y ||
-                center.x + half > cfg.buildingAreaMax.x || center.y + half > cfg.buildingAreaMax.y)
+            if (center.x < cfg.buildingAreaMin.x || center.y < cfg.buildingAreaMin.y ||
+                center.x > cfg.buildingAreaMax.x || center.y > cfg.buildingAreaMax.y)
                 return false;
 
+            // Only the structure that exists at placement time blocks the open
+            // nursery. The larger level-3 reservation is still used between
+            // facilities so future upgrades can never collide.
+            float nurseryHalf = Mathf.Max(.1f, cfg.facilityLevel1Radius);
             Vector2 nursery = SimulationManager.Instance.BirthCenterPosition;
-            float closestX = Mathf.Clamp(nursery.x, center.x - half, center.x + half);
-            float closestY = Mathf.Clamp(nursery.y, center.y - half, center.y + half);
+            float closestX = Mathf.Clamp(nursery.x, center.x - nurseryHalf, center.x + nurseryHalf);
+            float closestY = Mathf.Clamp(nursery.y, center.y - nurseryHalf, center.y + nurseryHalf);
             if ((new Vector2(closestX, closestY) - nursery).sqrMagnitude <
                 Mathf.Pow(SimulationManager.Instance.BirthRadius + .35f, 2f)) return false;
 
+            float half = cfg.buildingReservedHalfExtent;
+            _placed.RemoveAll(facility => facility == null || !facility.IsBuilt);
             foreach (var facility in _placed)
             {
                 if (facility == null || facility == _preview) continue;
@@ -213,6 +229,37 @@ namespace TCC.Managers
         private void SetGridVisible(bool visible)
         {
             if (_gridOverlay != null) _gridOverlay.SetActive(visible);
+        }
+
+        private void AlignGridOverlay()
+        {
+            if (_gridOverlay == null || !SimulationManager.Exists) return;
+            var renderer = _gridOverlay.GetComponent<SpriteRenderer>();
+            if (renderer == null || renderer.sprite == null) return;
+
+            var cfg = SimulationManager.Instance.Config;
+            Vector2 size = cfg.buildingAreaMax - cfg.buildingAreaMin;
+            Vector2 spriteSize = renderer.sprite.bounds.size;
+            _gridOverlay.transform.position = new Vector3(
+                (cfg.buildingAreaMin.x + cfg.buildingAreaMax.x) * .5f,
+                (cfg.buildingAreaMin.y + cfg.buildingAreaMax.y) * .5f,
+                _gridOverlay.transform.position.z);
+            _gridOverlay.transform.localScale = new Vector3(
+                size.x / Mathf.Max(.01f, spriteSize.x),
+                size.y / Mathf.Max(.01f, spriteSize.y),
+                1f);
+        }
+
+        private static void EnsureNurseryLabelReadable()
+        {
+            TMP_Text label = GameObject.Find("Nursery Label")?.GetComponent<TMP_Text>();
+            if (label == null) return;
+            label.transform.localScale = Vector3.one * .09f;
+            label.fontSize = 32f;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 18f;
+            label.fontSizeMax = 32f;
+            label.raycastTarget = false;
         }
     }
 }
