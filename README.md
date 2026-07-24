@@ -94,3 +94,28 @@
 Claude Code 助手**没有内置图像生成工具**，无法凭空画出角色、设施、背景、图标一类插画。它能做的：程序化几何图（Tiles、网格、纯色/图案）、以及原图之后的整条装配链——降采样／点采样量化、切帧、Unity import 设置、接线到 Prefab。
 
 若要生成插画级 `*_raw.png`，需外部图像模型出图：gorest 走 **`GEMINI_API_KEY`**（Google Gemini，你自己的额度）或托管版 [sprite.gorest.ai](https://sprite.gorest.ai/)（登录免 key）。提供 Gemini key 后，助手可脚本调用其出图接口，从生成到入库全包。
+
+## Claude / Fable5 外部协作边界（必须遵守）
+
+Claude / Fable5 只承担与主工程完全解耦、可单独审查和撤销的小任务。本项目的架构、主流程和最终集成统一由 Codex 负责。
+
+允许范围：
+
+1. 拉取最新代码，在独立分支或 Worktree 中工作；
+2. 新增自包含的 Shader、材质、后处理或小型屏幕表现组件；
+3. 新增不依赖主流程、通过明确公开接口接入的独立小功能；
+4. 处理已提供原图后的切片、量化、导入设置等机械美术装配；
+5. 按明确任务处理原创或已确认授权的音乐、音效素材及其独立导入配置；
+6. 提交单一目的 commit，并提供提交号、修改文件、测试结果和接入说明。
+
+禁止范围：
+
+1. 不修改 `Assets/_Game/Scripts/Core`、`Managers`、`Persistence` 中的架构和数据契约；
+2. 不修改存档格式、稳定 ID、枚举数值、主循环、经济数值、纪元规则、教程或叙事流程；
+3. 不修改 `Main.unity`、现有共享 Prefab、`ProjectSettings`、`Packages`、场景生成/烘焙脚本；
+4. 不修改 `GAME_FLOW_NARRATIVE.md`、`IMPLEMENTATION_SCHEDULE.md`、`BASELINE_VALIDATION.md` 或完成进度；
+5. 不移动、重命名、覆盖或删除现有资产及其 `.meta` 文件；
+6. 不直接提交、合并或推送到 `main`，不自行接线到共享场景；
+7. 不同时打开或修改 Codex 正在使用的同一 Unity 工程目录。
+
+外部协作交付默认停在独立分支，由 Codex 复核代码和许可证来源、运行 Unity 编译与回归测试，并完成最终接线和合并。未经明确列入允许范围的文件，一律视为不可修改。
