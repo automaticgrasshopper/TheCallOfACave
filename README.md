@@ -85,6 +85,10 @@
 
 保持 Unity Hub 已登录并运行，然后在仓库根目录运行 `Tools/run-profile-domain-tests.sh`。入口会在临时项目副本中编译代码，并验证档案 ID、双姓名、累计时长、纪元、教程状态、结构版本和时间戳经过 JSON 序列化往返后完整保留。
 
+## 档案仓库测试
+
+运行 `Tools/run-profile-repository-tests.sh` 可验证 `Application.persistentDataPath/profiles` 仓库契约、档案索引、同目录临时文件原子替换、上一有效版本备份和损坏回退。测试只使用系统临时目录，并在结束后自动清理。
+
 ## 关于 AI 助手的美术产出边界
 
 Claude Code 助手**没有内置图像生成工具**，无法凭空画出角色、设施、背景、图标一类插画。它能做的：程序化几何图（Tiles、网格、纯色/图案）、以及原图之后的整条装配链——降采样／点采样量化、切帧、Unity import 设置、接线到 Prefab。
