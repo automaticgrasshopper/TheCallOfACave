@@ -89,6 +89,10 @@
 
 运行 `Tools/run-profile-repository-tests.sh` 可验证 `Application.persistentDataPath/profiles` 仓库契约、档案索引、同目录临时文件原子替换、上一有效版本备份和损坏回退。测试只使用系统临时目录，并在结束后自动清理。
 
+## 世界快照契约测试
+
+运行 `Tools/run-world-snapshot-tests.sh` 可验证资金、年份、时长、随机种子，以及虫、蛋、库存、世界物品、设施、占用关系和计时器 DTO 经过 JSON 序列化往返后保持一致。
+
 ## 关于 AI 助手的美术产出边界
 
 不具备内置图像生成工具的代码助手无法凭空画出角色、设施、背景、图标一类插画。它能做的包括程序化几何图（Tiles、网格、纯色/图案），以及原图之后的整条装配链——降采样／点采样量化、切帧、Unity import 设置、接线到 Prefab。
